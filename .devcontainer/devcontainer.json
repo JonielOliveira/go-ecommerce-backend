@@ -1,0 +1,59 @@
+{
+  "name": "Backend Dev (Go, Gin & PostgreSQL 18)",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "app",
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  "shutdownAction": "stopCompose",
+  "remoteUser": "vscode",
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "golang.go",
+        "mtxr.sqltools",
+        "mtxr.sqltools-driver-pg",
+        "GitHub.copilot-chat",
+        "openai.chatgpt",
+		    "Anthropic.claude-code"
+      ],
+      "settings": {
+        "dev.containers.mountWaylandSocket": false,
+        "go.toolsManagement.autoUpdate": true,
+        "go.useLanguageServer": true,
+        "gopls": {
+          "ui.semanticTokens": true,
+          "formatting.gofumpt": true
+        },
+        "[go]": {
+          "editor.defaultFormatter": "golang.go",
+          "editor.formatOnSave": true,
+          "editor.codeActionsOnSave": {
+            "source.organizeImports": "explicit"
+          }
+        },
+        "[go.mod]": {
+          "editor.defaultFormatter": "golang.go"
+        }
+      }
+    },
+
+    "jetbrains": {
+      "backend": "GoLand"
+    }
+  },
+
+  "forwardPorts": ["app:8080", "db:5432"],
+
+  "portsAttributes": {
+    "app:8080": {
+      "label": "Go API (Docker)",
+      "onAutoForward": "notify"
+    },
+    "db:5432": {
+      "label": "PostgreSQL (Docker)",
+      "onAutoForward": "notify"
+    }
+  },
+
+  "postCreateCommand": "bash -lc 'go version && go mod download 2>/dev/null || true && if command -v air >/dev/null 2>&1; then air -v; fi && if command -v migrate >/dev/null 2>&1; then migrate -version; fi && if command -v sqlc >/dev/null 2>&1; then sqlc version; fi'"
+}
