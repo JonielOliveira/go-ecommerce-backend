@@ -11,11 +11,18 @@ import (
 	"ecommerce/internal/routes"
 	"ecommerce/internal/service"
 
+	_ "ecommerce/docs"
+
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
+// @title E-commerce API
+// @version 1.0
+// @description API for the E-commerce backend service.
+// @host localhost:8080
+// @BasePath /
 func main() {
 	cfg := config.Load()
 
