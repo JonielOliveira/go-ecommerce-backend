@@ -36,6 +36,10 @@ func main() {
 	productService := service.NewProductService(productRepository)
 	productHandler := handler.NewProductHandler(productService)
 
+	userRepository := repository.NewPostgresUserRepository(db)
+	userService := service.NewUserService(userRepository)
+	userHandler := handler.NewUserHandler(userService)
+
 	healthHandler := handler.NewHealthHandler(cfg)
 
 	router := gin.Default()
@@ -45,6 +49,7 @@ func main() {
 
 	routes.Register(router, routes.Handlers{
 		Product: productHandler,
+		User:    userHandler,
 		Health:  healthHandler,
 	})
 

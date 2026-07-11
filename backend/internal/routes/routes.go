@@ -9,8 +9,8 @@ import (
 type Handlers struct {
 	Health  *handler.HealthHandler
 	Product *handler.ProductHandler
+	User    *handler.UserHandler
 	// Order *handler.OrderHandler
-	// User  *handler.UserHandler
 }
 
 func Register(router *gin.Engine, handlers Handlers) {
@@ -21,7 +21,7 @@ func Register(router *gin.Engine, handlers Handlers) {
 	v1 := router.Group("/api/v1")
 	{
 		RegisterProductRoutes(v1, handlers.Product)
+		RegisterUserRoutes(v1, handlers.User)
 		// RegisterOrderRoutes(v1, handlers.Order)
-		// RegisterUserRoutes(v1, handlers.User)
 	}
 }
