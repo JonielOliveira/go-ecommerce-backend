@@ -1,5 +1,55 @@
 basePath: /
 definitions:
+  dto.AuthUserResponse:
+    properties:
+      email:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      role:
+        type: string
+    type: object
+  dto.CreateUserRequest:
+    properties:
+      avatarUrl:
+        type: string
+      email:
+        maxLength: 255
+        type: string
+      name:
+        maxLength: 255
+        type: string
+      password:
+        maxLength: 128
+        minLength: 8
+        type: string
+      role:
+        type: string
+    required:
+    - email
+    - name
+    - password
+    type: object
+  dto.LoginRequest:
+    properties:
+      email:
+        maxLength: 255
+        type: string
+      password:
+        maxLength: 128
+        minLength: 8
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  dto.LoginResponse:
+    properties:
+      user:
+        $ref: '#/definitions/dto.AuthUserResponse'
+    type: object
   dto.ProductRequest:
     properties:
       categoryId:
@@ -46,6 +96,48 @@ definitions:
       updatedAt:
         type: string
     type: object
+  dto.RegisterRequest:
+    properties:
+      email:
+        maxLength: 255
+        type: string
+      name:
+        maxLength: 255
+        type: string
+      password:
+        maxLength: 128
+        minLength: 8
+        type: string
+    required:
+    - email
+    - name
+    - password
+    type: object
+  dto.UserResponse:
+    properties:
+      active:
+        type: boolean
+      avatarUrl:
+        type: string
+      createdAt:
+        type: string
+      deletedAt:
+        type: string
+      email:
+        type: string
+      emailVerifiedAt:
+        type: string
+      id:
+        type: string
+      lastLoginAt:
+        type: string
+      name:
+        type: string
+      role:
+        type: string
+      updatedAt:
+        type: string
+    type: object
 host: localhost:8080
 info:
   contact: {}
@@ -53,6 +145,82 @@ info:
   title: E-commerce API
   version: "1.0"
 paths:
+  /api/v1/auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate with email and password, setting an HttpOnly access
+        token cookie
+      parameters:
+      - description: Login credentials
+        in: body
+        name: credentials
+        required: true
+        schema:
+          $ref: '#/definitions/dto.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.LoginResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Login
+      tags:
+      - auth
+  /api/v1/auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Publicly register a new account. Always creates the "customer"
+        role — clients cannot choose a different role.
+      parameters:
+      - description: Registration data
+        in: body
+        name: registration
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.UserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Register
+      tags:
+      - auth
   /api/v1/products:
     post:
       consumes:
@@ -81,4 +249,59 @@ paths:
       summary: Create product
       tags:
       - products
+  /api/v1/users:
+    post:
+      consumes:
+      - application/json
+      description: Create a new user (customer or admin). Requires authentication
+        and the "admin" role.
+      parameters:
+      - description: User data
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.UserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - CookieAuth: []
+      summary: Create user
+      tags:
+      - users
+securityDefinitions:
+  CookieAuth:
+    description: JWT access token set as an HttpOnly cookie by POST /api/v1/auth/login.
+    in: cookie
+    name: access_token
+    type: apiKey
 swagger: "2.0"
