@@ -5,10 +5,12 @@ import (
 
 	"ecommerce/internal/config"
 	"ecommerce/internal/database"
+	"ecommerce/internal/domain"
 	"ecommerce/internal/handler"
 	"ecommerce/internal/middleware"
 	"ecommerce/internal/repository"
 	"ecommerce/internal/routes"
+	"ecommerce/internal/security"
 	"ecommerce/internal/service"
 
 	_ "ecommerce/docs"
@@ -40,17 +42,35 @@ func main() {
 	userService := service.NewUserService(userRepository)
 	userHandler := handler.NewUserHandler(userService)
 
+	jwtService := security.NewJWTService(cfg.JWTSecret, cfg.JWTIssuer, cfg.JWTAudience, cfg.JWTAccessTokenTTL)
+
+	authRepository := repository.NewPostgresAuthRepository(db)
+	authService := service.NewAuthService(authRepository, jwtService)
+	authHandler := handler.NewAuthHandler(authService, handler.CookieConfig{
+		Name:     cfg.AuthCookieName,
+		Secure:   cfg.AuthCookieSecure,
+		SameSite: handler.ParseSameSite(cfg.AuthCookieSameSite),
+		Domain:   cfg.AuthCookieDomain,
+	})
+
 	healthHandler := handler.NewHealthHandler(cfg)
 
+	authenticateMiddleware := middleware.Authenticate(jwtService, authRepository, cfg.AuthCookieName)
+	requireAdminMiddleware := middleware.RequireRole(domain.RoleAdmin)
+
 	router := gin.Default()
-	router.Use(middleware.CORS())
+	router.Use(middleware.CORS(cfg.CORSAllowedOrigins))
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	routes.Register(router, routes.Handlers{
 		Product: productHandler,
 		User:    userHandler,
+		Auth:    authHandler,
 		Health:  healthHandler,
+	}, routes.Middlewares{
+		Authenticate: authenticateMiddleware,
+		RequireAdmin: requireAdminMiddleware,
 	})
 
 	router.Run(":" + cfg.ServerPort)

@@ -6,23 +6,28 @@ import (
 	"ecommerce/internal/handler"
 )
 
-func RegisterUserRoutes(router *gin.RouterGroup, handler *handler.UserHandler) {
+func RegisterUserRoutes(
+	router *gin.RouterGroup,
+	handler *handler.UserHandler,
+	authenticate gin.HandlerFunc,
+	requireAdmin gin.HandlerFunc,
+) {
 	users := router.Group("/users")
 	{
-		// Create
+		// Create (público - cadastro; sempre cria papel "customer")
 		users.POST("", handler.Create)
 
-		// Read
-		users.GET("", handler.Search)
-		users.GET("/:id", handler.FindByID)
+		// Read (admin)
+		users.GET("", authenticate, requireAdmin, handler.Search)
+		users.GET("/:id", authenticate, requireAdmin, handler.FindByID)
 
-		// Update
-		users.PUT("/:id", handler.Update)
-		users.PATCH("/:id/restore", handler.RestoreByID)
-		users.PATCH("/:id/activate", handler.ActivateByID)
-		users.PATCH("/:id/deactivate", handler.DeactivateByID)
+		// Update (admin)
+		users.PUT("/:id", authenticate, requireAdmin, handler.Update)
+		users.PATCH("/:id/restore", authenticate, requireAdmin, handler.RestoreByID)
+		users.PATCH("/:id/activate", authenticate, requireAdmin, handler.ActivateByID)
+		users.PATCH("/:id/deactivate", authenticate, requireAdmin, handler.DeactivateByID)
 
-		// Delete
-		users.DELETE("/:id", handler.DeleteByID)
+		// Delete (admin)
+		users.DELETE("/:id", authenticate, requireAdmin, handler.DeleteByID)
 	}
 }

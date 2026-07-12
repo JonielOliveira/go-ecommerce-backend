@@ -6,24 +6,28 @@ import (
 	"ecommerce/internal/handler"
 )
 
-func RegisterProductRoutes(router *gin.RouterGroup, handler *handler.ProductHandler) {
+func RegisterProductRoutes(
+	router *gin.RouterGroup,
+	handler *handler.ProductHandler,
+	authenticate gin.HandlerFunc,
+	requireAdmin gin.HandlerFunc,
+) {
 	products := router.Group("/products")
 	{
-		// Create
-		products.POST("", handler.Create)
-
-		// Read
+		// Read (público)
 		products.GET("", handler.Search)
 		products.GET("/:id", handler.FindByID)
 
-		// Update
-		products.PUT("/:id", handler.Update)
-		products.PATCH("/:id/restore", handler.RestoreByID)
-		products.PATCH("/:id/activate", handler.ActivateByID)
-		products.PATCH("/:id/deactivate", handler.DeactivateByID)
+		// Create (admin)
+		products.POST("", authenticate, requireAdmin, handler.Create)
 
-		// Delete
-		products.DELETE("/:id", handler.DeleteByID)
+		// Update (admin)
+		products.PUT("/:id", authenticate, requireAdmin, handler.Update)
+		products.PATCH("/:id/restore", authenticate, requireAdmin, handler.RestoreByID)
+		products.PATCH("/:id/activate", authenticate, requireAdmin, handler.ActivateByID)
+		products.PATCH("/:id/deactivate", authenticate, requireAdmin, handler.DeactivateByID)
 
+		// Delete (admin)
+		products.DELETE("/:id", authenticate, requireAdmin, handler.DeleteByID)
 	}
 }

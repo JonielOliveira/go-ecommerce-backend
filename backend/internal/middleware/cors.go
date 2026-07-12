@@ -7,13 +7,12 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func CORS() gin.HandlerFunc {
+// CORS restringe as origens permitidas a uma lista explícita, já que
+// AllowCredentials=true não pode ser combinado com "*" (o navegador rejeita
+// a resposta). As origens vêm de CORS_ALLOWED_ORIGINS.
+func CORS(allowedOrigins []string) gin.HandlerFunc {
 	return cors.New(cors.Config{
-		AllowAllOrigins: true,
-		// AllowOrigins: []string{
-		// 	"http://localhost:5173", // Vite/Vue/React
-		// 	"http://localhost:3000", // React/Next
-		// },
+		AllowOrigins: allowedOrigins,
 		AllowMethods: []string{
 			"GET",
 			"POST",
