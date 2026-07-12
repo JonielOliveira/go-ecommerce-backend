@@ -14,6 +14,15 @@ const (
 	RoleAdmin    UserRole = "admin"
 )
 
+func (r UserRole) IsValid() bool {
+	switch r {
+	case RoleCustomer, RoleAdmin:
+		return true
+	default:
+		return false
+	}
+}
+
 var emailRegex = regexp.MustCompile(`^[^\s@]+@[^\s@]+\.[^\s@]+$`)
 
 type User struct {
@@ -86,7 +95,7 @@ func validateUser(name, email string, role UserRole) error {
 	if !emailRegex.MatchString(strings.TrimSpace(email)) {
 		errs = append(errs, ErrInvalidUserEmail)
 	}
-	if role != RoleCustomer && role != RoleAdmin {
+	if !role.IsValid() {
 		errs = append(errs, ErrInvalidUserRole)
 	}
 

@@ -25,6 +25,10 @@ import (
 // @description API for the E-commerce backend service.
 // @host localhost:8080
 // @BasePath /
+// @securityDefinitions.apikey CookieAuth
+// @in cookie
+// @name access_token
+// @description JWT access token set as an HttpOnly cookie by POST /api/v1/auth/login.
 func main() {
 	cfg := config.Load()
 
@@ -46,7 +50,7 @@ func main() {
 
 	authRepository := repository.NewPostgresAuthRepository(db)
 	authService := service.NewAuthService(authRepository, jwtService)
-	authHandler := handler.NewAuthHandler(authService, handler.CookieConfig{
+	authHandler := handler.NewAuthHandler(authService, userService, handler.CookieConfig{
 		Name:     cfg.AuthCookieName,
 		Secure:   cfg.AuthCookieSecure,
 		SameSite: handler.ParseSameSite(cfg.AuthCookieSameSite),

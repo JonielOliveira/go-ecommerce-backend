@@ -28,13 +28,24 @@ func hashPassword(password string) (string, error) {
 	return string(hash), nil
 }
 
-func (s *UserService) Create(request dto.UserRequest) (dto.UserResponse, error) {
-	user, err := mapper.NewUser(request)
+// CreateUserInput reúne os dados necessários para criar um usuário,
+// independentemente de a chamada vir do autocadastro público ou da
+// criação administrativa — ambas convergem em createUser.
+type CreateUserInput struct {
+	Name      string
+	Email     string
+	Password  string
+	Role      domain.UserRole
+	AvatarURL *string
+}
+
+func (s *UserService) createUser(input CreateUserInput) (dto.UserResponse, error) {
+	user, err := domain.NewUser(input.Name, input.Email, input.Role, input.AvatarURL)
 	if err != nil {
 		return dto.UserResponse{}, err
 	}
 
-	passwordHash, err := hashPassword(request.Password)
+	passwordHash, err := hashPassword(input.Password)
 	if err != nil {
 		return dto.UserResponse{}, err
 	}
@@ -45,6 +56,39 @@ func (s *UserService) Create(request dto.UserRequest) (dto.UserResponse, error) 
 	}
 
 	return mapper.NewUserResponse(createdUser), nil
+}
+
+// Register é o autocadastro público (POST /auth/register): sempre cria um
+// usuário "customer", sem exceção.
+func (s *UserService) Register(request dto.RegisterRequest) (dto.UserResponse, error) {
+	return s.createUser(CreateUserInput{
+		Name:     request.Name,
+		Email:    request.Email,
+		Password: request.Password,
+		Role:     domain.RoleCustomer,
+	})
+}
+
+// Create é a criação administrativa (POST /users, restrita a admins):
+// aceita um papel opcional, com "customer" como padrão quando omitido.
+func (s *UserService) Create(request dto.CreateUserRequest) (dto.UserResponse, error) {
+	role := domain.RoleCustomer
+
+	if request.Role != nil {
+		role = domain.UserRole(*request.Role)
+	}
+
+	if !role.IsValid() {
+		return dto.UserResponse{}, domain.ErrInvalidUserRole
+	}
+
+	return s.createUser(CreateUserInput{
+		Name:      request.Name,
+		Email:     request.Email,
+		Password:  request.Password,
+		Role:      role,
+		AvatarURL: request.AvatarURL,
+	})
 }
 
 func (s *UserService) Update(id string, request dto.UserUpdateRequest) (dto.UserResponse, error) {

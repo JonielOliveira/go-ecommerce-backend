@@ -23,16 +23,20 @@ func NewUserHandler(service *service.UserService) *UserHandler {
 
 // Create godoc
 // @Summary Create user
-// @Description Create a new user
+// @Description Create a new user (customer or admin). Requires authentication and the "admin" role.
 // @Tags users
 // @Accept json
 // @Produce json
-// @Param user body dto.UserRequest true "User data"
+// @Security CookieAuth
+// @Param user body dto.CreateUserRequest true "User data"
 // @Success 201 {object} dto.UserResponse
 // @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 403 {object} map[string]string
+// @Failure 409 {object} map[string]string
 // @Router /api/v1/users [post]
 func (h *UserHandler) Create(c *gin.Context) {
-	var request dto.UserRequest
+	var request dto.CreateUserRequest
 
 	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{

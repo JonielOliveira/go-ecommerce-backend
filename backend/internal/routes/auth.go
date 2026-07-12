@@ -10,6 +10,7 @@ func RegisterAuthRoutes(router *gin.RouterGroup, handler *handler.AuthHandler, a
 	auth := router.Group("/auth")
 	{
 		// Públicas
+		auth.POST("/register", handler.Register)
 		auth.POST("/login", handler.Login)
 		auth.POST("/logout", handler.Logout)
 

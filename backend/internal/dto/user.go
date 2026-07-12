@@ -2,13 +2,15 @@ package dto
 
 import "time"
 
-// UserRequest é o DTO de cadastro público de usuário. Não expõe "role" de
-// propósito: o cadastro público sempre cria um usuário "customer" — ver
-// mapper.NewUser.
-type UserRequest struct {
+// CreateUserRequest é o DTO da criação administrativa de usuário
+// (POST /users, restrito a admins). "Role" é opcional e um ponteiro para
+// distinguir "campo não enviado" (usa o padrão "customer") de "campo
+// enviado" — ver service.UserService.Create.
+type CreateUserRequest struct {
 	Name      string  `json:"name" binding:"required,max=255"`
 	Email     string  `json:"email" binding:"required,email,max=255"`
 	Password  string  `json:"password" binding:"required,min=8,max=128"`
+	Role      *string `json:"role"`
 	AvatarURL *string `json:"avatarUrl"`
 }
 

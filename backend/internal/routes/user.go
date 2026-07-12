@@ -6,6 +6,9 @@ import (
 	"ecommerce/internal/handler"
 )
 
+// RegisterUserRoutes registra as rotas administrativas de usuário. Todo o
+// grupo exige autenticação e papel "admin" — o autocadastro público vive em
+// POST /auth/register, não aqui.
 func RegisterUserRoutes(
 	router *gin.RouterGroup,
 	handler *handler.UserHandler,
@@ -13,21 +16,22 @@ func RegisterUserRoutes(
 	requireAdmin gin.HandlerFunc,
 ) {
 	users := router.Group("/users")
+	users.Use(authenticate, requireAdmin)
 	{
-		// Create (público - cadastro; sempre cria papel "customer")
+		// Create
 		users.POST("", handler.Create)
 
-		// Read (admin)
-		users.GET("", authenticate, requireAdmin, handler.Search)
-		users.GET("/:id", authenticate, requireAdmin, handler.FindByID)
+		// Read
+		users.GET("", handler.Search)
+		users.GET("/:id", handler.FindByID)
 
-		// Update (admin)
-		users.PUT("/:id", authenticate, requireAdmin, handler.Update)
-		users.PATCH("/:id/restore", authenticate, requireAdmin, handler.RestoreByID)
-		users.PATCH("/:id/activate", authenticate, requireAdmin, handler.ActivateByID)
-		users.PATCH("/:id/deactivate", authenticate, requireAdmin, handler.DeactivateByID)
+		// Update
+		users.PUT("/:id", handler.Update)
+		users.PATCH("/:id/restore", handler.RestoreByID)
+		users.PATCH("/:id/activate", handler.ActivateByID)
+		users.PATCH("/:id/deactivate", handler.DeactivateByID)
 
-		// Delete (admin)
-		users.DELETE("/:id", authenticate, requireAdmin, handler.DeleteByID)
+		// Delete
+		users.DELETE("/:id", handler.DeleteByID)
 	}
 }

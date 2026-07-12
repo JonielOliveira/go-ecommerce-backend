@@ -36,12 +36,14 @@ func ParseSameSite(value string) http.SameSite {
 
 type AuthHandler struct {
 	authService  service.AuthService
+	userService  *service.UserService
 	cookieConfig CookieConfig
 }
 
-func NewAuthHandler(authService service.AuthService, cookieConfig CookieConfig) *AuthHandler {
+func NewAuthHandler(authService service.AuthService, userService *service.UserService, cookieConfig CookieConfig) *AuthHandler {
 	return &AuthHandler{
 		authService:  authService,
+		userService:  userService,
 		cookieConfig: cookieConfig,
 	}
 }
@@ -73,6 +75,53 @@ func (h *AuthHandler) clearAuthCookie(c *gin.Context) {
 		Secure:   h.cookieConfig.Secure,
 		SameSite: h.cookieConfig.SameSite,
 	})
+}
+
+// Register godoc
+// @Summary Register
+// @Description Publicly register a new account. Always creates the "customer" role — clients cannot choose a different role.
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param registration body dto.RegisterRequest true "Registration data"
+// @Success 201 {object} dto.UserResponse
+// @Failure 400 {object} map[string]string
+// @Failure 409 {object} map[string]string
+// @Router /api/v1/auth/register [post]
+func (h *AuthHandler) Register(c *gin.Context) {
+	var request dto.RegisterRequest
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid request body",
+		})
+		return
+	}
+
+	response, err := h.userService.Register(request)
+	if err != nil {
+		switch {
+		case errors.Is(err, domain.ErrUserEmailAlreadyExists):
+			c.JSON(http.StatusConflict, gin.H{
+				"error": err.Error(),
+			})
+
+		case errors.Is(err, domain.ErrInvalidUserName),
+			errors.Is(err, domain.ErrInvalidUserEmail):
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": err.Error(),
+			})
+
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "internal server error",
+			})
+		}
+
+		return
+	}
+
+	c.JSON(http.StatusCreated, response)
 }
 
 // Login godoc

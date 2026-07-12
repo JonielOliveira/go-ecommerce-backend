@@ -5,13 +5,6 @@ import (
 	"ecommerce/internal/dto"
 )
 
-// NewUser constrói um usuário a partir do cadastro público. O papel é
-// sempre "customer": UserRequest não expõe "role" para impedir que o
-// cliente se autopromova a admin.
-func NewUser(req dto.UserRequest) (*domain.User, error) {
-	return domain.NewUser(req.Name, req.Email, domain.RoleCustomer, req.AvatarURL)
-}
-
 func NewUserResponse(u *domain.User) dto.UserResponse {
 	return dto.UserResponse{
 		ID:              u.ID(),
