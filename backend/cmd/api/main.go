@@ -57,10 +57,15 @@ func main() {
 		Domain:   cfg.AuthCookieDomain,
 	})
 
+	orderRepository := repository.NewPostgresOrderRepository(db)
+	orderService := service.NewOrderService(orderRepository)
+	orderHandler := handler.NewOrderHandler(orderService)
+
 	healthHandler := handler.NewHealthHandler(cfg)
 
 	authenticateMiddleware := middleware.Authenticate(jwtService, authRepository, cfg.AuthCookieName)
 	requireAdminMiddleware := middleware.RequireRole(domain.RoleAdmin)
+	requireCustomerOrAdminMiddleware := middleware.RequireRole(domain.RoleCustomer, domain.RoleAdmin)
 
 	router := gin.Default()
 	router.Use(middleware.CORS(cfg.CORSAllowedOrigins))
@@ -71,10 +76,12 @@ func main() {
 		Product: productHandler,
 		User:    userHandler,
 		Auth:    authHandler,
+		Order:   orderHandler,
 		Health:  healthHandler,
 	}, routes.Middlewares{
-		Authenticate: authenticateMiddleware,
-		RequireAdmin: requireAdminMiddleware,
+		Authenticate:           authenticateMiddleware,
+		RequireAdmin:           requireAdminMiddleware,
+		RequireCustomerOrAdmin: requireCustomerOrAdminMiddleware,
 	})
 
 	router.Run(":" + cfg.ServerPort)

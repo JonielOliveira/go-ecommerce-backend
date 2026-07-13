@@ -11,14 +11,15 @@ type Handlers struct {
 	Product *handler.ProductHandler
 	User    *handler.UserHandler
 	Auth    *handler.AuthHandler
-	// Order *handler.OrderHandler
+	Order   *handler.OrderHandler
 }
 
 // Middlewares agrupa os middlewares globais de autenticação e autorização
 // usados na composição das rotas privadas/administrativas.
 type Middlewares struct {
-	Authenticate gin.HandlerFunc
-	RequireAdmin gin.HandlerFunc
+	Authenticate           gin.HandlerFunc
+	RequireAdmin           gin.HandlerFunc
+	RequireCustomerOrAdmin gin.HandlerFunc
 }
 
 func Register(router *gin.Engine, handlers Handlers, middlewares Middlewares) {
@@ -31,6 +32,6 @@ func Register(router *gin.Engine, handlers Handlers, middlewares Middlewares) {
 		RegisterAuthRoutes(v1, handlers.Auth, middlewares.Authenticate)
 		RegisterProductRoutes(v1, handlers.Product, middlewares.Authenticate, middlewares.RequireAdmin)
 		RegisterUserRoutes(v1, handlers.User, middlewares.Authenticate, middlewares.RequireAdmin)
-		// RegisterOrderRoutes(v1, handlers.Order)
+		RegisterOrderRoutes(v1, handlers.Order, middlewares.Authenticate, middlewares.RequireCustomerOrAdmin)
 	}
 }
