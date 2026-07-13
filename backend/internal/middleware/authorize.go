@@ -17,7 +17,7 @@ func RequireRole(allowedRoles ...domain.UserRole) gin.HandlerFunc {
 		user, ok := GetAuthenticatedUser(c)
 		if !ok {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-				"error": "authentication required",
+				"error": "autenticação necessária",
 			})
 			return
 		}
@@ -30,7 +30,7 @@ func RequireRole(allowedRoles ...domain.UserRole) gin.HandlerFunc {
 		}
 
 		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
-			"error": "you do not have permission to perform this operation",
+			"error": "você não tem permissão para executar esta operação",
 		})
 	}
 }

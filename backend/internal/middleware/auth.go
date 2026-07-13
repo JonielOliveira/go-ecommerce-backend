@@ -43,7 +43,7 @@ func Authenticate(
 		token, err := c.Cookie(cookieName)
 		if err != nil || strings.TrimSpace(token) == "" {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-				"error": "authentication required",
+				"error": "autenticação necessária",
 			})
 			return
 		}
@@ -52,13 +52,13 @@ func Authenticate(
 		if err != nil {
 			if errors.Is(err, domain.ErrExpiredToken) {
 				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-					"error": "authentication token expired",
+					"error": "token de autenticação expirado",
 				})
 				return
 			}
 
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-				"error": "invalid authentication token",
+				"error": "token de autenticação inválido",
 			})
 			return
 		}
@@ -66,7 +66,7 @@ func Authenticate(
 		user, err := authRepository.FindAuthenticatedUserByID(c.Request.Context(), userID)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-				"error": "user session is no longer valid",
+				"error": "sessão do usuário não é mais válida",
 			})
 			return
 		}

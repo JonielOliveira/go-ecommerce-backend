@@ -32,7 +32,7 @@ func (h *OrderHandler) authenticatedUser(c *gin.Context) (*domain.AuthenticatedU
 	user, ok := middleware.GetAuthenticatedUser(c)
 	if !ok {
 		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "authentication required",
+			"error": "autenticação necessária",
 		})
 	}
 
@@ -63,7 +63,7 @@ func (h *OrderHandler) Create(c *gin.Context) {
 
 	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "invalid request body",
+			"error": "corpo da requisição inválido",
 		})
 		return
 	}
@@ -91,7 +91,7 @@ func (h *OrderHandler) Create(c *gin.Context) {
 
 		default:
 			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": "internal server error",
+				"error": "erro interno do servidor",
 			})
 		}
 
@@ -160,7 +160,7 @@ func (h *OrderHandler) FindByID(c *gin.Context) {
 	id := c.Param("id")
 	if !orderIDPattern.MatchString(id) {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "invalid order id",
+			"error": "id do pedido inválido",
 		})
 		return
 	}
@@ -170,12 +170,12 @@ func (h *OrderHandler) FindByID(c *gin.Context) {
 		switch {
 		case errors.Is(err, domain.ErrOrderNotFound), errors.Is(err, domain.ErrOrderAccessDenied):
 			c.JSON(http.StatusNotFound, gin.H{
-				"error": "order not found",
+				"error": "pedido não encontrado",
 			})
 
 		default:
 			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": "internal server error",
+				"error": "erro interno do servidor",
 			})
 		}
 
@@ -207,7 +207,7 @@ func (h *OrderHandler) PayByID(c *gin.Context) {
 	id := c.Param("id")
 	if !orderIDPattern.MatchString(id) {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "invalid order id",
+			"error": "id do pedido inválido",
 		})
 		return
 	}
@@ -217,7 +217,7 @@ func (h *OrderHandler) PayByID(c *gin.Context) {
 		switch {
 		case errors.Is(err, domain.ErrOrderNotFound), errors.Is(err, domain.ErrOrderAccessDenied):
 			c.JSON(http.StatusNotFound, gin.H{
-				"error": "order not found",
+				"error": "pedido não encontrado",
 			})
 
 		case errors.Is(err, domain.ErrOrderCannotBePaid):
@@ -227,7 +227,7 @@ func (h *OrderHandler) PayByID(c *gin.Context) {
 
 		default:
 			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": "internal server error",
+				"error": "erro interno do servidor",
 			})
 		}
 
@@ -259,7 +259,7 @@ func (h *OrderHandler) CancelByID(c *gin.Context) {
 	id := c.Param("id")
 	if !orderIDPattern.MatchString(id) {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "invalid order id",
+			"error": "id do pedido inválido",
 		})
 		return
 	}
@@ -269,7 +269,7 @@ func (h *OrderHandler) CancelByID(c *gin.Context) {
 		switch {
 		case errors.Is(err, domain.ErrOrderNotFound), errors.Is(err, domain.ErrOrderAccessDenied):
 			c.JSON(http.StatusNotFound, gin.H{
-				"error": "order not found",
+				"error": "pedido não encontrado",
 			})
 
 		case errors.Is(err, domain.ErrOrderCannotBeCanceled):
@@ -279,7 +279,7 @@ func (h *OrderHandler) CancelByID(c *gin.Context) {
 
 		default:
 			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": "internal server error",
+				"error": "erro interno do servidor",
 			})
 		}
 

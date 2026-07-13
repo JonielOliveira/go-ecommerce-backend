@@ -36,7 +36,7 @@ func (h *ProductHandler) Create(c *gin.Context) {
 
 	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "invalid request body",
+			"error": "corpo da requisição inválido",
 		})
 		return
 	}
@@ -123,7 +123,7 @@ func (h *ProductHandler) FindByID(c *gin.Context) {
 // 	response, err := h.service.FindAll()
 // 	if err != nil {
 // 		c.JSON(http.StatusInternalServerError, gin.H{
-// 			"error": "internal server error",
+// 			"error": "erro interno do servidor",
 // 		})
 // 		return
 // 	}

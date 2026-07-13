@@ -93,7 +93,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 
 	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "invalid request body",
+			"error": "corpo da requisição inválido",
 		})
 		return
 	}
@@ -114,7 +114,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 
 		default:
 			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": "internal server error",
+				"error": "erro interno do servidor",
 			})
 		}
 
@@ -141,7 +141,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 
 	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "invalid request body",
+			"error": "corpo da requisição inválido",
 		})
 		return
 	}
@@ -151,17 +151,17 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		switch {
 		case errors.Is(err, domain.ErrInvalidCredentials):
 			c.JSON(http.StatusUnauthorized, gin.H{
-				"error": "invalid email or password",
+				"error": "email ou senha inválidos",
 			})
 
 		case errors.Is(err, domain.ErrUserInactive):
 			c.JSON(http.StatusForbidden, gin.H{
-				"error": "user account is inactive",
+				"error": "conta do usuário está inativa",
 			})
 
 		default:
 			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": "internal server error",
+				"error": "erro interno do servidor",
 			})
 		}
 
@@ -189,7 +189,7 @@ func (h *AuthHandler) Me(c *gin.Context) {
 	user, ok := middleware.GetAuthenticatedUser(c)
 	if !ok {
 		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "authentication required",
+			"error": "autenticação necessária",
 		})
 		return
 	}
