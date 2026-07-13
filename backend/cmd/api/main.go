@@ -46,6 +46,8 @@ func main() {
 	userService := service.NewUserService(userRepository)
 	userHandler := handler.NewUserHandler(userService)
 
+	seedDefaultAdmin(userService)
+
 	jwtService := security.NewJWTService(cfg.JWTSecret, cfg.JWTIssuer, cfg.JWTAudience, cfg.JWTAccessTokenTTL)
 
 	authRepository := repository.NewPostgresAuthRepository(db)
