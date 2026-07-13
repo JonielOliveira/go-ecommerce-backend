@@ -11,6 +11,26 @@ definitions:
       role:
         type: string
     type: object
+  dto.CreateOrderItemRequest:
+    properties:
+      product_id:
+        type: string
+      quantity:
+        type: integer
+    required:
+    - product_id
+    - quantity
+    type: object
+  dto.CreateOrderRequest:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.CreateOrderItemRequest'
+        minItems: 1
+        type: array
+    required:
+    - items
+    type: object
   dto.CreateUserRequest:
     properties:
       avatarUrl:
@@ -49,6 +69,57 @@ definitions:
     properties:
       user:
         $ref: '#/definitions/dto.AuthUserResponse'
+    type: object
+  dto.OrderItemResponse:
+    properties:
+      id:
+        type: string
+      product_id:
+        type: string
+      quantity:
+        type: integer
+      subtotal:
+        type: number
+      unit_price:
+        type: number
+    type: object
+  dto.OrderPageResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.OrderResponse'
+        type: array
+      page:
+        type: integer
+      pageSize:
+        type: integer
+      totalItems:
+        type: integer
+      totalPages:
+        type: integer
+    type: object
+  dto.OrderResponse:
+    properties:
+      canceled_at:
+        type: string
+      created_at:
+        type: string
+      customer_id:
+        type: string
+      id:
+        type: string
+      items:
+        items:
+          $ref: '#/definitions/dto.OrderItemResponse'
+        type: array
+      paid_at:
+        type: string
+      status:
+        type: string
+      total_amount:
+        type: number
+      updated_at:
+        type: string
     type: object
   dto.ProductRequest:
     properties:
@@ -221,6 +292,228 @@ paths:
       summary: Register
       tags:
       - auth
+  /api/v1/orders:
+    get:
+      description: Lists orders with pagination, using the same page/pageSize format
+        as products and users. Customer sees only their own orders (and is counted
+        only among their own); admin sees and counts all.
+      parameters:
+      - description: Page number, starting at 1 (default 1)
+        in: query
+        name: page
+        type: integer
+      - description: Orders per page (default 20, max 100)
+        in: query
+        name: pageSize
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.OrderPageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - CookieAuth: []
+      summary: List orders
+      tags:
+      - orders
+    post:
+      consumes:
+      - application/json
+      description: Creates a new order for the authenticated user. The order owner
+        always comes from the authenticated session — customer and admin cannot send
+        customer_id/user_id/owner_id in the body.
+      parameters:
+      - description: Order items
+        in: body
+        name: order
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateOrderRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.OrderResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - CookieAuth: []
+      summary: Create order
+      tags:
+      - orders
+  /api/v1/orders/{id}:
+    get:
+      description: Returns an order with its items. Customer can only access their
+        own orders; admin can access any order. Orders belonging to another user are
+        reported as not found.
+      parameters:
+      - description: Order ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.OrderResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - CookieAuth: []
+      summary: Find order by ID
+      tags:
+      - orders
+  /api/v1/orders/{id}/cancel:
+    post:
+      description: Moves an order from PENDING to CANCELED and returns all quantities
+        to stock. Customer can only cancel their own orders; admin can cancel any
+        order.
+      parameters:
+      - description: Order ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.OrderResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - CookieAuth: []
+      summary: Cancel order
+      tags:
+      - orders
+  /api/v1/orders/{id}/pay:
+    post:
+      description: Moves an order from PENDING to PAID. Only the order owner can pay
+        it, whether customer or admin — admin does not get a bypass to pay other people's
+        orders.
+      parameters:
+      - description: Order ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.OrderResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - CookieAuth: []
+      summary: Pay order
+      tags:
+      - orders
   /api/v1/products:
     post:
       consumes:
