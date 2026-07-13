@@ -180,11 +180,26 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	})
 }
 
+// Logout godoc
+// @Summary Logout
+// @Description Clears the access token cookie. Public route — works even without a valid session, so the frontend can always clear a stale cookie.
+// @Tags auth
+// @Success 204 "No Content"
+// @Router /api/v1/auth/logout [post]
 func (h *AuthHandler) Logout(c *gin.Context) {
 	h.clearAuthCookie(c)
 	c.Status(http.StatusNoContent)
 }
 
+// Me godoc
+// @Summary Current authenticated user
+// @Description Returns the authenticated user's own safe data (no password/hash). Requires authentication.
+// @Tags auth
+// @Produce json
+// @Security CookieAuth
+// @Success 200 {object} dto.AuthUserResponse
+// @Failure 401 {object} map[string]string
+// @Router /api/v1/auth/me [get]
 func (h *AuthHandler) Me(c *gin.Context) {
 	user, ok := middleware.GetAuthenticatedUser(c)
 	if !ok {

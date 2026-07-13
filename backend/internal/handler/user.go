@@ -73,6 +73,22 @@ func (h *UserHandler) Create(c *gin.Context) {
 	c.JSON(http.StatusCreated, response)
 }
 
+// Update godoc
+// @Summary Update user
+// @Description Update an existing user, including role. Requires authentication and the "admin" role.
+// @Tags users
+// @Accept json
+// @Produce json
+// @Security CookieAuth
+// @Param id path string true "User ID"
+// @Param user body dto.UserUpdateRequest true "User data"
+// @Success 200 {object} dto.UserResponse
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 403 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 409 {object} map[string]string
+// @Router /api/v1/users/{id} [put]
 func (h *UserHandler) Update(c *gin.Context) {
 	id := c.Param("id")
 
@@ -123,6 +139,18 @@ func (h *UserHandler) Update(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+// FindByID godoc
+// @Summary Find user by ID
+// @Description Returns a user by its ID. Requires authentication and the "admin" role.
+// @Tags users
+// @Produce json
+// @Security CookieAuth
+// @Param id path string true "User ID"
+// @Success 200 {object} dto.UserResponse
+// @Failure 401 {object} map[string]string
+// @Failure 403 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Router /api/v1/users/{id} [get]
 func (h *UserHandler) FindByID(c *gin.Context) {
 	id := c.Param("id")
 
@@ -144,6 +172,24 @@ func (h *UserHandler) FindByID(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+// Search godoc
+// @Summary List users
+// @Description Lists users with filters and pagination. Requires authentication and the "admin" role.
+// @Tags users
+// @Produce json
+// @Security CookieAuth
+// @Param name query string false "Filter by name (partial match)"
+// @Param email query string false "Filter by email (partial match)"
+// @Param role query string false "Filter by role" Enums(customer, admin)
+// @Param active query bool false "Filter by active status"
+// @Param deletionState query string false "Filter by deletion state" Enums(not_deleted, deleted, all)
+// @Param page query int false "Page number, starting at 1 (default 1)"
+// @Param pageSize query int false "Users per page (default 20, max 100)"
+// @Success 200 {object} dto.UserPageResponse
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 403 {object} map[string]string
+// @Router /api/v1/users [get]
 func (h *UserHandler) Search(c *gin.Context) {
 	var request dto.UserSearchRequest
 
@@ -165,6 +211,19 @@ func (h *UserHandler) Search(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+// DeleteByID godoc
+// @Summary Delete user
+// @Description Soft-deletes a user. Requires authentication and the "admin" role.
+// @Tags users
+// @Produce json
+// @Security CookieAuth
+// @Param id path string true "User ID"
+// @Success 204 "No Content"
+// @Failure 401 {object} map[string]string
+// @Failure 403 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 409 {object} map[string]string
+// @Router /api/v1/users/{id} [delete]
 func (h *UserHandler) DeleteByID(c *gin.Context) {
 	id := c.Param("id")
 
@@ -192,6 +251,19 @@ func (h *UserHandler) DeleteByID(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+// RestoreByID godoc
+// @Summary Restore user
+// @Description Restores a soft-deleted user. Requires authentication and the "admin" role.
+// @Tags users
+// @Produce json
+// @Security CookieAuth
+// @Param id path string true "User ID"
+// @Success 204 "No Content"
+// @Failure 401 {object} map[string]string
+// @Failure 403 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 409 {object} map[string]string
+// @Router /api/v1/users/{id}/restore [patch]
 func (h *UserHandler) RestoreByID(c *gin.Context) {
 	id := c.Param("id")
 
@@ -219,6 +291,19 @@ func (h *UserHandler) RestoreByID(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+// ActivateByID godoc
+// @Summary Activate user
+// @Description Activates a user. Requires authentication and the "admin" role.
+// @Tags users
+// @Produce json
+// @Security CookieAuth
+// @Param id path string true "User ID"
+// @Success 204 "No Content"
+// @Failure 401 {object} map[string]string
+// @Failure 403 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 409 {object} map[string]string
+// @Router /api/v1/users/{id}/activate [patch]
 func (h *UserHandler) ActivateByID(c *gin.Context) {
 	id := c.Param("id")
 
@@ -251,6 +336,19 @@ func (h *UserHandler) ActivateByID(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+// DeactivateByID godoc
+// @Summary Deactivate user
+// @Description Deactivates a user. Requires authentication and the "admin" role.
+// @Tags users
+// @Produce json
+// @Security CookieAuth
+// @Param id path string true "User ID"
+// @Success 204 "No Content"
+// @Failure 401 {object} map[string]string
+// @Failure 403 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 409 {object} map[string]string
+// @Router /api/v1/users/{id}/deactivate [patch]
 func (h *UserHandler) DeactivateByID(c *gin.Context) {
 	id := c.Param("id")
 
