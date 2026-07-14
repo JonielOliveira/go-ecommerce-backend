@@ -118,6 +118,50 @@ Lá é possível ver todas as rotas, os schemas de request/response e testar cha
 
 Faça login com o admin padrão (ou com qualquer usuário do seed) em `POST /api/v1/auth/login`, ou crie sua própria conta em `POST /api/v1/auth/register` (sempre criada como `customer`). A partir daí, explore os endpoints pelo Swagger ou por um cliente HTTP (Postman, Insomnia, `curl`).
 
+---
+
+## Frontend (POC)
+
+O repositório também traz um frontend em React + TypeScript (Vite + Mantine) na pasta `frontend/`, criado como prova de conceito para consumir a API.
+
+### 1. Pré-requisitos
+
+- [Node.js 22+](https://nodejs.org/) e `npm`
+
+### 2. Instalar dependências
+
+```bash
+cd frontend
+npm install
+```
+
+### 3. Configurar o `.env`
+
+```bash
+cp .env.example .env
+```
+
+Por padrão, `VITE_API_BASE_URL=http://localhost:8080/api/v1` já aponta para o backend rodando localmente (passo 6 acima). Ajuste se a API estiver em outro host/porta.
+
+### 4. Rodar em modo desenvolvimento
+
+```bash
+npm run dev
+```
+
+A aplicação sobe em `http://localhost:5173` (porta padrão do Vite), com hot reload. Certifique-se de que o backend esteja rodando e com `CORS_ALLOWED_ORIGINS` incluindo `http://localhost:5173`.
+
+### 5. Build de produção
+
+```bash
+npm run build
+npm run preview
+```
+
+`npm run build` gera os arquivos estáticos em `frontend/dist/`; `npm run preview` sobe um servidor local para conferir o resultado do build.
+
+---
+
 ## Estrutura do projeto
 
 ```text
@@ -141,6 +185,14 @@ backend/
     ├── routes/       # composição das rotas e middlewares
     ├── security/     # geração/validação de JWT
     └── service/      # orquestração das regras de negócio
+
+frontend/
+└── src/
+    ├── api/          # cliente HTTP e chamadas para a API (BASE_URL via VITE_API_BASE_URL)
+    ├── components/   # componentes reutilizáveis de UI
+    ├── context/       # contextos React (ex.: autenticação)
+    ├── hooks/        # hooks customizados
+    └── pages/        # telas da aplicação (orders/, products/, users/)
 ```
 
 ## Principais grupos de rotas
