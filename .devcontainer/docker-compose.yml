@@ -2,6 +2,7 @@ name: ${COMPOSE_PROJECT_NAME:-backend-dev}
 
 volumes:
   postgres-data:
+  postgres-test-data:
 
 services:
   app:
@@ -60,6 +61,36 @@ services:
 
     # Add "forwardPorts": ["5432"] to **devcontainer.json** to forward PostgreSQL locally.
     # (Adding the "ports" property to this file will not forward from a Codespace.)
+
+  # Banco dedicado aos testes de integração (backend/integration). Fica atrás
+  # do profile "test" para não subir por padrão junto com o Dev Container —
+  # suba explicitamente com:
+  #   docker compose -f .devcontainer/docker-compose.yml --profile test up -d --wait postgres-test
+  # Porta, banco e volume são isolados dos usados pela aplicação: o database
+  # termina em "_test" de propósito (ver requireTestDatabaseURL nos testes),
+  # como uma segunda barreira contra rodar TRUNCATE no banco de desenvolvimento.
+  postgres-test:
+    container_name: ${POSTGRES_TEST_CONTAINER_NAME:-postgres-test-db}
+    image: postgres:${POSTGRES_TAG:-18}
+    restart: unless-stopped
+    profiles:
+      - test
+    networks:
+      - app-network
+    ports:
+      - "${POSTGRES_TEST_EXTERNAL_PORT:-5434}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_TEST_USER:-postgres}"]
+      interval: ${POSTGRES_HEALTH_INTERVAL:-10s}
+      timeout: ${POSTGRES_HEALTH_TIMEOUT:-5s}
+      retries: ${POSTGRES_HEALTH_RETRIES:-5}
+      start_period: ${POSTGRES_HEALTH_START_PERIOD:-30s}
+    volumes:
+      - postgres-test-data:/var/lib/postgresql
+    environment:
+      POSTGRES_DB: ${POSTGRES_TEST_DB:-ecommerce_test}
+      POSTGRES_USER: ${POSTGRES_TEST_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_TEST_PASSWORD:-postgres}
 
 networks:
   app-network:
