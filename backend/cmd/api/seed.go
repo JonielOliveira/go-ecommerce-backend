@@ -20,7 +20,7 @@ const (
 // existência: a própria tentativa de criação já resolve isso, já que o
 // repository mapeia e-mail duplicado (constraint única do banco) para
 // domain.ErrUserEmailAlreadyExists — nesse caso, não faz nada.
-func seedDefaultAdmin(userService *service.UserService) {
+func seedDefaultAdmin(userService service.UserService) {
 	role := string(domain.RoleAdmin)
 
 	_, err := userService.Create(dto.CreateUserRequest{
