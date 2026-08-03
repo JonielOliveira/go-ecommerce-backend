@@ -207,6 +207,12 @@ frontend/
 
 Detalhes completos (parâmetros, schemas, códigos de status) estão no Swagger — veja o passo 7.
 
+## Testes
+
+O backend tem testes unitários (`domain`, `service`, `handler`, `security`, `middleware` — sem precisar de PostgreSQL) e testes de integração reais contra PostgreSQL (fluxos HTTP completos de autenticação, produtos, pedidos e usuários, além de testes isolados por Repository). Cobertura de `internal/...`: **49,4%** só com unitários, **88,7%** somando integração.
+
+Como rodar cada suíte, o padrão usado em cada teste e a tabela de cobertura por módulo estão detalhados em **[TESTS.md](TESTS.md)**.
+
 ## Variáveis de ambiente
 
 Arquivo: `backend/.env` (copiado de `backend/.env.example`).
