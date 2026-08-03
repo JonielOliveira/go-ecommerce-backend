@@ -7,17 +7,30 @@ import (
 	"ecommerce/internal/repository"
 )
 
-type ProductService struct {
+// ProductService declara os casos de uso de produto consumidos pelo
+// Handler. O tipo concreto abaixo satisfaz o contrato implicitamente.
+type ProductService interface {
+	Create(request dto.ProductRequest) (dto.ProductResponse, error)
+	Update(id string, request dto.ProductUpdateRequest) (dto.ProductResponse, error)
+	FindByID(id string) (dto.ProductResponse, error)
+	Search(filter dto.ProductSearchRequest) (dto.ProductPageResponse, error)
+	DeleteByID(id string) error
+	RestoreByID(id string) error
+	ActivateByID(id string) error
+	DeactivateByID(id string) error
+}
+
+type productService struct {
 	repository repository.ProductRepository
 }
 
-func NewProductService(repository repository.ProductRepository) *ProductService {
-	return &ProductService{
+func NewProductService(repository repository.ProductRepository) ProductService {
+	return &productService{
 		repository: repository,
 	}
 }
 
-func (s *ProductService) Create(request dto.ProductRequest) (dto.ProductResponse, error) {
+func (s *productService) Create(request dto.ProductRequest) (dto.ProductResponse, error) {
 	product, err := mapper.NewProduct(request)
 	if err != nil {
 		return dto.ProductResponse{}, err
@@ -31,7 +44,7 @@ func (s *ProductService) Create(request dto.ProductRequest) (dto.ProductResponse
 	return mapper.NewProductResponse(createdProduct), nil
 }
 
-func (s *ProductService) Update(id string, request dto.ProductUpdateRequest) (dto.ProductResponse, error) {
+func (s *productService) Update(id string, request dto.ProductUpdateRequest) (dto.ProductResponse, error) {
 	product, err := s.repository.FindByID(id)
 	if err != nil {
 		return dto.ProductResponse{}, err
@@ -60,7 +73,7 @@ func (s *ProductService) Update(id string, request dto.ProductUpdateRequest) (dt
 	return mapper.NewProductResponse(updatedProduct), nil
 }
 
-func (s *ProductService) FindByID(id string) (dto.ProductResponse, error) {
+func (s *productService) FindByID(id string) (dto.ProductResponse, error) {
 	product, err := s.repository.FindByID(id)
 	if err != nil {
 		return dto.ProductResponse{}, err
@@ -69,7 +82,7 @@ func (s *ProductService) FindByID(id string) (dto.ProductResponse, error) {
 	return mapper.NewProductResponse(product), nil
 }
 
-// func (s *ProductService) FindAll() ([]dto.ProductResponse, error) {
+// func (s *productService) FindAll() ([]dto.ProductResponse, error) {
 // 	products, err := s.repository.FindAll()
 // 	if err != nil {
 // 		return nil, err
@@ -97,7 +110,7 @@ func mapDeletionFilter(state dto.DeletionState) repository.DeletionFilter {
 	}
 }
 
-func (s *ProductService) Search(filter dto.ProductSearchRequest) (dto.ProductPageResponse, error) {
+func (s *productService) Search(filter dto.ProductSearchRequest) (dto.ProductPageResponse, error) {
 	if filter.Page <= 0 {
 		filter.Page = 1
 	}
@@ -146,18 +159,18 @@ func (s *ProductService) Search(filter dto.ProductSearchRequest) (dto.ProductPag
 	}, nil
 }
 
-func (s *ProductService) DeleteByID(id string) error {
+func (s *productService) DeleteByID(id string) error {
 	return s.repository.DeleteByID(id)
 }
 
-func (s *ProductService) RestoreByID(id string) error {
+func (s *productService) RestoreByID(id string) error {
 	return s.repository.RestoreByID(id)
 }
 
-func (s *ProductService) ActivateByID(id string) error {
+func (s *productService) ActivateByID(id string) error {
 	return s.repository.ActivateByID(id)
 }
 
-func (s *ProductService) DeactivateByID(id string) error {
+func (s *productService) DeactivateByID(id string) error {
 	return s.repository.DeactivateByID(id)
 }

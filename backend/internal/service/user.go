@@ -9,12 +9,26 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type UserService struct {
+// UserService declara os casos de uso de usuário consumidos pelo Handler.
+// O tipo concreto abaixo satisfaz o contrato implicitamente.
+type UserService interface {
+	Register(request dto.RegisterRequest) (dto.UserResponse, error)
+	Create(request dto.CreateUserRequest) (dto.UserResponse, error)
+	Update(id string, request dto.UserUpdateRequest) (dto.UserResponse, error)
+	FindByID(id string) (dto.UserResponse, error)
+	Search(filter dto.UserSearchRequest) (dto.UserPageResponse, error)
+	DeleteByID(id string) error
+	RestoreByID(id string) error
+	ActivateByID(id string) error
+	DeactivateByID(id string) error
+}
+
+type userService struct {
 	repository repository.UserRepository
 }
 
-func NewUserService(repository repository.UserRepository) *UserService {
-	return &UserService{
+func NewUserService(repository repository.UserRepository) UserService {
+	return &userService{
 		repository: repository,
 	}
 }
@@ -39,7 +53,7 @@ type CreateUserInput struct {
 	AvatarURL *string
 }
 
-func (s *UserService) createUser(input CreateUserInput) (dto.UserResponse, error) {
+func (s *userService) createUser(input CreateUserInput) (dto.UserResponse, error) {
 	user, err := domain.NewUser(input.Name, input.Email, input.Role, input.AvatarURL)
 	if err != nil {
 		return dto.UserResponse{}, err
@@ -60,7 +74,7 @@ func (s *UserService) createUser(input CreateUserInput) (dto.UserResponse, error
 
 // Register é o autocadastro público (POST /auth/register): sempre cria um
 // usuário "customer", sem exceção.
-func (s *UserService) Register(request dto.RegisterRequest) (dto.UserResponse, error) {
+func (s *userService) Register(request dto.RegisterRequest) (dto.UserResponse, error) {
 	return s.createUser(CreateUserInput{
 		Name:     request.Name,
 		Email:    request.Email,
@@ -71,7 +85,7 @@ func (s *UserService) Register(request dto.RegisterRequest) (dto.UserResponse, e
 
 // Create é a criação administrativa (POST /users, restrita a admins):
 // aceita um papel opcional, com "customer" como padrão quando omitido.
-func (s *UserService) Create(request dto.CreateUserRequest) (dto.UserResponse, error) {
+func (s *userService) Create(request dto.CreateUserRequest) (dto.UserResponse, error) {
 	role := domain.RoleCustomer
 
 	if request.Role != nil {
@@ -91,7 +105,7 @@ func (s *UserService) Create(request dto.CreateUserRequest) (dto.UserResponse, e
 	})
 }
 
-func (s *UserService) Update(id string, request dto.UserUpdateRequest) (dto.UserResponse, error) {
+func (s *userService) Update(id string, request dto.UserUpdateRequest) (dto.UserResponse, error) {
 	user, err := s.repository.FindByID(id)
 	if err != nil {
 		return dto.UserResponse{}, err
@@ -129,7 +143,7 @@ func (s *UserService) Update(id string, request dto.UserUpdateRequest) (dto.User
 	return mapper.NewUserResponse(updatedUser), nil
 }
 
-func (s *UserService) FindByID(id string) (dto.UserResponse, error) {
+func (s *userService) FindByID(id string) (dto.UserResponse, error) {
 	user, err := s.repository.FindByID(id)
 	if err != nil {
 		return dto.UserResponse{}, err
@@ -151,7 +165,7 @@ func mapUserDeletionFilter(state dto.DeletionState) repository.DeletionFilter {
 	}
 }
 
-func (s *UserService) Search(filter dto.UserSearchRequest) (dto.UserPageResponse, error) {
+func (s *userService) Search(filter dto.UserSearchRequest) (dto.UserPageResponse, error) {
 	if filter.Page <= 0 {
 		filter.Page = 1
 	}
@@ -199,18 +213,18 @@ func (s *UserService) Search(filter dto.UserSearchRequest) (dto.UserPageResponse
 	}, nil
 }
 
-func (s *UserService) DeleteByID(id string) error {
+func (s *userService) DeleteByID(id string) error {
 	return s.repository.DeleteByID(id)
 }
 
-func (s *UserService) RestoreByID(id string) error {
+func (s *userService) RestoreByID(id string) error {
 	return s.repository.RestoreByID(id)
 }
 
-func (s *UserService) ActivateByID(id string) error {
+func (s *userService) ActivateByID(id string) error {
 	return s.repository.ActivateByID(id)
 }
 
-func (s *UserService) DeactivateByID(id string) error {
+func (s *userService) DeactivateByID(id string) error {
 	return s.repository.DeactivateByID(id)
 }
