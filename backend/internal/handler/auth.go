@@ -36,11 +36,11 @@ func ParseSameSite(value string) http.SameSite {
 
 type AuthHandler struct {
 	authService  service.AuthService
-	userService  *service.UserService
+	userService  service.UserService
 	cookieConfig CookieConfig
 }
 
-func NewAuthHandler(authService service.AuthService, userService *service.UserService, cookieConfig CookieConfig) *AuthHandler {
+func NewAuthHandler(authService service.AuthService, userService service.UserService, cookieConfig CookieConfig) *AuthHandler {
 	return &AuthHandler{
 		authService:  authService,
 		userService:  userService,
