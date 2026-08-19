@@ -45,7 +45,7 @@ func TestPostgresOrderRepositoryCreate(t *testing.T) {
 
 	t.Run("proprietário inativo retorna ErrOrderOwnerUnavailable", func(t *testing.T) {
 		inactiveOwner := mustCreateOrderOwner(t, userRepo, "Dono Inativo", "dono.inativo.repo@example.com")
-		if err := userRepo.DeactivateByID(inactiveOwner.ID()); err != nil {
+		if err := userRepo.DeactivateByID(t.Context(), inactiveOwner.ID()); err != nil {
 			t.Fatalf("desativar proprietário: %v", err)
 		}
 
@@ -59,7 +59,7 @@ func TestPostgresOrderRepositoryCreate(t *testing.T) {
 
 	t.Run("proprietário removido retorna ErrOrderOwnerUnavailable", func(t *testing.T) {
 		deletedOwner := mustCreateOrderOwner(t, userRepo, "Dono Removido", "dono.removido.repo@example.com")
-		if err := userRepo.DeleteByID(deletedOwner.ID()); err != nil {
+		if err := userRepo.DeleteByID(t.Context(), deletedOwner.ID()); err != nil {
 			t.Fatalf("remover proprietário: %v", err)
 		}
 
@@ -90,7 +90,7 @@ func TestPostgresOrderRepositoryCreate(t *testing.T) {
 			t.Fatalf("itens = %#v; esperados 2", order.Items)
 		}
 
-		gotA, err := productRepo.FindByID(productA.ID())
+		gotA, err := productRepo.FindByID(t.Context(), productA.ID())
 		if err != nil {
 			t.Fatalf("FindByID produto A: %v", err)
 		}
@@ -98,7 +98,7 @@ func TestPostgresOrderRepositoryCreate(t *testing.T) {
 			t.Errorf("estoque do produto A = %d; esperado = %d", gotA.Stock(), productA.Stock()-2)
 		}
 
-		gotB, err := productRepo.FindByID(productB.ID())
+		gotB, err := productRepo.FindByID(t.Context(), productB.ID())
 		if err != nil {
 			t.Fatalf("FindByID produto B: %v", err)
 		}
@@ -126,7 +126,7 @@ func TestPostgresOrderRepositoryCreate(t *testing.T) {
 			t.Fatalf("erro = %v; esperado = %v", err, domain.ErrInsufficientStock)
 		}
 
-		got, err := productRepo.FindByID(productC.ID())
+		got, err := productRepo.FindByID(t.Context(), productC.ID())
 		if err != nil {
 			t.Fatalf("FindByID: %v", err)
 		}
@@ -237,7 +237,7 @@ func TestPostgresOrderRepositoryCancelByID(t *testing.T) {
 	})
 
 	t.Run("cancelar restaura o estoque exato do item", func(t *testing.T) {
-		before, err := productRepo.FindByID(product.ID())
+		before, err := productRepo.FindByID(t.Context(), product.ID())
 		if err != nil {
 			t.Fatalf("FindByID antes: %v", err)
 		}
@@ -255,7 +255,7 @@ func TestPostgresOrderRepositoryCancelByID(t *testing.T) {
 			t.Errorf("pedido cancelado = %#v", canceled)
 		}
 
-		after, err := productRepo.FindByID(product.ID())
+		after, err := productRepo.FindByID(t.Context(), product.ID())
 		if err != nil {
 			t.Fatalf("FindByID depois: %v", err)
 		}

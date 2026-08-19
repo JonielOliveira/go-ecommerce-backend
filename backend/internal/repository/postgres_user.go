@@ -80,7 +80,7 @@ func scanUser(row pgx.Row) (*domain.User, error) {
 	)
 }
 
-func (r *PostgresUserRepository) findState(id string) (*userState, error) {
+func (r *PostgresUserRepository) findState(ctx context.Context, id string) (*userState, error) {
 	const query = `
 		SELECT active, deleted_at
 		FROM users
@@ -90,7 +90,7 @@ func (r *PostgresUserRepository) findState(id string) (*userState, error) {
 	var state userState
 
 	err := r.db.QueryRow(
-		context.Background(),
+		ctx,
 		query,
 		id,
 	).Scan(
@@ -109,9 +109,7 @@ func (r *PostgresUserRepository) findState(id string) (*userState, error) {
 	return &state, nil
 }
 
-func (r *PostgresUserRepository) Create(user *domain.User, passwordHash string) (*domain.User, error) {
-	ctx := context.Background()
-
+func (r *PostgresUserRepository) Create(ctx context.Context, user *domain.User, passwordHash string) (*domain.User, error) {
 	tx, err := r.db.Begin(ctx)
 	if err != nil {
 		return nil, err
@@ -159,9 +157,7 @@ func (r *PostgresUserRepository) Create(user *domain.User, passwordHash string) 
 	return createdUser, nil
 }
 
-func (r *PostgresUserRepository) Update(user *domain.User, passwordHash *string) (*domain.User, error) {
-	ctx := context.Background()
-
+func (r *PostgresUserRepository) Update(ctx context.Context, user *domain.User, passwordHash *string) (*domain.User, error) {
 	tx, err := r.db.Begin(ctx)
 	if err != nil {
 		return nil, err
@@ -194,7 +190,7 @@ func (r *PostgresUserRepository) Update(user *domain.User, passwordHash *string)
 	))
 
 	if errors.Is(err, pgx.ErrNoRows) {
-		state, stateErr := r.findState(user.ID())
+		state, stateErr := r.findState(ctx, user.ID())
 		if stateErr != nil {
 			return nil, stateErr
 		}
@@ -232,7 +228,7 @@ func (r *PostgresUserRepository) Update(user *domain.User, passwordHash *string)
 	return updatedUser, nil
 }
 
-func (r *PostgresUserRepository) FindByID(id string) (*domain.User, error) {
+func (r *PostgresUserRepository) FindByID(ctx context.Context, id string) (*domain.User, error) {
 	const query = `
 		SELECT
 			id, name, email, avatar_url, role, active,
@@ -241,7 +237,7 @@ func (r *PostgresUserRepository) FindByID(id string) (*domain.User, error) {
 		WHERE id = $1
 	`
 
-	user, err := scanUser(r.db.QueryRow(context.Background(), query, id))
+	user, err := scanUser(r.db.QueryRow(ctx, query, id))
 
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, domain.ErrUserNotFound
@@ -313,7 +309,7 @@ func buildUserFilters(filter UserSearchFilter) (string, []any) {
 	return " WHERE " + strings.Join(conditions, " AND "), args
 }
 
-func (r *PostgresUserRepository) Search(filter UserSearchFilter) (*UserSearchResult, error) {
+func (r *PostgresUserRepository) Search(ctx context.Context, filter UserSearchFilter) (*UserSearchResult, error) {
 	whereClause, args := buildUserFilters(filter)
 
 	countQuery := `
@@ -324,7 +320,7 @@ func (r *PostgresUserRepository) Search(filter UserSearchFilter) (*UserSearchRes
 	var total int64
 
 	if err := r.db.QueryRow(
-		context.Background(),
+		ctx,
 		countQuery,
 		args...,
 	).Scan(&total); err != nil {
@@ -349,7 +345,7 @@ func (r *PostgresUserRepository) Search(filter UserSearchFilter) (*UserSearchRes
 	)
 
 	rows, err := r.db.Query(
-		context.Background(),
+		ctx,
 		selectQuery,
 		selectArgs...,
 	)
@@ -379,7 +375,7 @@ func (r *PostgresUserRepository) Search(filter UserSearchFilter) (*UserSearchRes
 	}, nil
 }
 
-func (r *PostgresUserRepository) DeleteByID(id string) error {
+func (r *PostgresUserRepository) DeleteByID(ctx context.Context, id string) error {
 	const query = `
 		UPDATE users
 		SET
@@ -394,7 +390,7 @@ func (r *PostgresUserRepository) DeleteByID(id string) error {
 	var userID string
 
 	err := r.db.QueryRow(
-		context.Background(),
+		ctx,
 		query,
 		id,
 	).Scan(&userID)
@@ -407,7 +403,7 @@ func (r *PostgresUserRepository) DeleteByID(id string) error {
 		return err
 	}
 
-	state, err := r.findState(id)
+	state, err := r.findState(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -419,7 +415,7 @@ func (r *PostgresUserRepository) DeleteByID(id string) error {
 	return nil
 }
 
-func (r *PostgresUserRepository) RestoreByID(id string) error {
+func (r *PostgresUserRepository) RestoreByID(ctx context.Context, id string) error {
 	const query = `
 		UPDATE users
 		SET
@@ -434,7 +430,7 @@ func (r *PostgresUserRepository) RestoreByID(id string) error {
 	var userID string
 
 	err := r.db.QueryRow(
-		context.Background(),
+		ctx,
 		query,
 		id,
 	).Scan(&userID)
@@ -447,7 +443,7 @@ func (r *PostgresUserRepository) RestoreByID(id string) error {
 		return err
 	}
 
-	state, err := r.findState(id)
+	state, err := r.findState(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -459,7 +455,7 @@ func (r *PostgresUserRepository) RestoreByID(id string) error {
 	return nil
 }
 
-func (r *PostgresUserRepository) ActivateByID(id string) error {
+func (r *PostgresUserRepository) ActivateByID(ctx context.Context, id string) error {
 	const query = `
 		UPDATE users
 		SET
@@ -474,7 +470,7 @@ func (r *PostgresUserRepository) ActivateByID(id string) error {
 	var userID string
 
 	err := r.db.QueryRow(
-		context.Background(),
+		ctx,
 		query,
 		id,
 	).Scan(&userID)
@@ -487,7 +483,7 @@ func (r *PostgresUserRepository) ActivateByID(id string) error {
 		return err
 	}
 
-	state, err := r.findState(id)
+	state, err := r.findState(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -503,7 +499,7 @@ func (r *PostgresUserRepository) ActivateByID(id string) error {
 	return nil
 }
 
-func (r *PostgresUserRepository) DeactivateByID(id string) error {
+func (r *PostgresUserRepository) DeactivateByID(ctx context.Context, id string) error {
 	const query = `
 		UPDATE users
 		SET
@@ -518,7 +514,7 @@ func (r *PostgresUserRepository) DeactivateByID(id string) error {
 	var userID string
 
 	err := r.db.QueryRow(
-		context.Background(),
+		ctx,
 		query,
 		id,
 	).Scan(&userID)
@@ -531,7 +527,7 @@ func (r *PostgresUserRepository) DeactivateByID(id string) error {
 		return err
 	}
 
-	state, err := r.findState(id)
+	state, err := r.findState(ctx, id)
 	if err != nil {
 		return err
 	}

@@ -1,6 +1,10 @@
 package repository
 
-import "ecommerce/internal/domain"
+import (
+	"context"
+
+	"ecommerce/internal/domain"
+)
 
 type UserSearchFilter struct {
 	Name           string
@@ -18,14 +22,14 @@ type UserSearchResult struct {
 }
 
 type UserRepository interface {
-	Create(user *domain.User, passwordHash string) (*domain.User, error)
-	Update(user *domain.User, passwordHash *string) (*domain.User, error)
+	Create(ctx context.Context, user *domain.User, passwordHash string) (*domain.User, error)
+	Update(ctx context.Context, user *domain.User, passwordHash *string) (*domain.User, error)
 
-	FindByID(id string) (*domain.User, error)
-	Search(filter UserSearchFilter) (*UserSearchResult, error)
+	FindByID(ctx context.Context, id string) (*domain.User, error)
+	Search(ctx context.Context, filter UserSearchFilter) (*UserSearchResult, error)
 
-	DeleteByID(id string) error
-	RestoreByID(id string) error
-	ActivateByID(id string) error
-	DeactivateByID(id string) error
+	DeleteByID(ctx context.Context, id string) error
+	RestoreByID(ctx context.Context, id string) error
+	ActivateByID(ctx context.Context, id string) error
+	DeactivateByID(ctx context.Context, id string) error
 }

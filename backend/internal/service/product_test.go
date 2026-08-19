@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"testing"
 	"time"
@@ -24,35 +25,35 @@ type fakeProductRepository struct {
 	deactivateByIDFunc func(string) error
 }
 
-func (fake *fakeProductRepository) Create(product *domain.Product) (*domain.Product, error) {
+func (fake *fakeProductRepository) Create(_ context.Context, product *domain.Product) (*domain.Product, error) {
 	return fake.createFunc(product)
 }
 
-func (fake *fakeProductRepository) Update(product *domain.Product) (*domain.Product, error) {
+func (fake *fakeProductRepository) Update(_ context.Context, product *domain.Product) (*domain.Product, error) {
 	return fake.updateFunc(product)
 }
 
-func (fake *fakeProductRepository) FindByID(id string) (*domain.Product, error) {
+func (fake *fakeProductRepository) FindByID(_ context.Context, id string) (*domain.Product, error) {
 	return fake.findByIDFunc(id)
 }
 
-func (fake *fakeProductRepository) Search(filter repository.ProductSearchFilter) (*repository.ProductSearchResult, error) {
+func (fake *fakeProductRepository) Search(_ context.Context, filter repository.ProductSearchFilter) (*repository.ProductSearchResult, error) {
 	return fake.searchFunc(filter)
 }
 
-func (fake *fakeProductRepository) DeleteByID(id string) error {
+func (fake *fakeProductRepository) DeleteByID(_ context.Context, id string) error {
 	return fake.deleteByIDFunc(id)
 }
 
-func (fake *fakeProductRepository) RestoreByID(id string) error {
+func (fake *fakeProductRepository) RestoreByID(_ context.Context, id string) error {
 	return fake.restoreByIDFunc(id)
 }
 
-func (fake *fakeProductRepository) ActivateByID(id string) error {
+func (fake *fakeProductRepository) ActivateByID(_ context.Context, id string) error {
 	return fake.activateByIDFunc(id)
 }
 
-func (fake *fakeProductRepository) DeactivateByID(id string) error {
+func (fake *fakeProductRepository) DeactivateByID(_ context.Context, id string) error {
 	return fake.deactivateByIDFunc(id)
 }
 
@@ -159,7 +160,7 @@ func TestProductServiceCreate(t *testing.T) {
 			}
 			productService := NewProductService(fakeRepository)
 
-			response, err := productService.Create(testCase.request)
+			response, err := productService.Create(context.Background(), testCase.request)
 
 			if !errors.Is(err, testCase.wantErr) {
 				t.Fatalf("erro recebido = %v; esperado = %v", err, testCase.wantErr)
@@ -194,7 +195,7 @@ func TestProductServiceUpdate(t *testing.T) {
 		}
 		productService := NewProductService(fakeRepository)
 
-		response, err := productService.Update("prod-1", dto.ProductUpdateRequest{
+		response, err := productService.Update(context.Background(), "prod-1", dto.ProductUpdateRequest{
 			Name:        "Teclado Mecânico V2",
 			Description: "RGB, switches vermelhos",
 			Price:       249.90,
@@ -224,7 +225,7 @@ func TestProductServiceUpdate(t *testing.T) {
 		}
 		productService := NewProductService(fakeRepository)
 
-		_, err := productService.Update("prod-2", dto.ProductUpdateRequest{
+		_, err := productService.Update(context.Background(), "prod-2", dto.ProductUpdateRequest{
 			Name:        "Novo nome",
 			Description: "Nova descrição",
 			Price:       10,
@@ -251,7 +252,7 @@ func TestProductServiceUpdate(t *testing.T) {
 		}
 		productService := NewProductService(fakeRepository)
 
-		_, err := productService.Update("prod-3", dto.ProductUpdateRequest{
+		_, err := productService.Update(context.Background(), "prod-3", dto.ProductUpdateRequest{
 			Name:        "Teclado",
 			Description: "Descrição",
 			Price:       0,
@@ -274,7 +275,7 @@ func TestProductServiceUpdate(t *testing.T) {
 		}
 		productService := NewProductService(fakeRepository)
 
-		_, err := productService.Update("prod-404", dto.ProductUpdateRequest{
+		_, err := productService.Update(context.Background(), "prod-404", dto.ProductUpdateRequest{
 			Name:        "Teclado",
 			Description: "Descrição",
 			Price:       10,
@@ -336,7 +337,7 @@ func TestProductServiceSearch(t *testing.T) {
 			}
 			productService := NewProductService(fakeRepository)
 
-			response, err := productService.Search(testCase.request)
+			response, err := productService.Search(context.Background(), testCase.request)
 
 			if err != nil {
 				t.Fatalf("Search retornou erro inesperado: %v", err)
@@ -392,7 +393,7 @@ func TestProductServiceDelegatesOperations(t *testing.T) {
 			},
 		}
 
-		got, err := NewProductService(fakeRepository).FindByID("prod-1")
+		got, err := NewProductService(fakeRepository).FindByID(context.Background(), "prod-1")
 
 		if err != nil {
 			t.Fatalf("FindByID retornou erro inesperado: %v", err)
@@ -411,7 +412,7 @@ func TestProductServiceDelegatesOperations(t *testing.T) {
 			},
 		}
 
-		err := NewProductService(fakeRepository).DeleteByID("prod-2")
+		err := NewProductService(fakeRepository).DeleteByID(context.Background(), "prod-2")
 
 		if err != nil {
 			t.Fatalf("DeleteByID retornou erro inesperado: %v", err)
@@ -430,7 +431,7 @@ func TestProductServiceDelegatesOperations(t *testing.T) {
 			},
 		}
 
-		err := NewProductService(fakeRepository).RestoreByID("prod-3")
+		err := NewProductService(fakeRepository).RestoreByID(context.Background(), "prod-3")
 
 		if err != nil {
 			t.Fatalf("RestoreByID retornou erro inesperado: %v", err)
@@ -449,7 +450,7 @@ func TestProductServiceDelegatesOperations(t *testing.T) {
 			},
 		}
 
-		err := NewProductService(fakeRepository).ActivateByID("prod-4")
+		err := NewProductService(fakeRepository).ActivateByID(context.Background(), "prod-4")
 
 		if err != nil {
 			t.Fatalf("ActivateByID retornou erro inesperado: %v", err)
@@ -468,7 +469,7 @@ func TestProductServiceDelegatesOperations(t *testing.T) {
 			},
 		}
 
-		err := NewProductService(fakeRepository).DeactivateByID("prod-5")
+		err := NewProductService(fakeRepository).DeactivateByID(context.Background(), "prod-5")
 
 		if err != nil {
 			t.Fatalf("DeactivateByID retornou erro inesperado: %v", err)

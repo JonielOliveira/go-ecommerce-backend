@@ -3,6 +3,7 @@
 package repository
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"testing"
@@ -22,7 +23,7 @@ func mustCreateProduct(t *testing.T, repo *PostgresProductRepository, name, desc
 		t.Fatalf("montar produto de teste %q: %v", name, err)
 	}
 
-	created, err := repo.Create(product)
+	created, err := repo.Create(context.Background(), product)
 	if err != nil {
 		t.Fatalf("criar produto de teste %q: %v", name, err)
 	}
@@ -59,7 +60,7 @@ func TestPostgresProductRepositoryCreateAndFindByID(t *testing.T) {
 		t.Fatalf("montar produto de teste: %v", err)
 	}
 
-	created, err := repo.Create(product)
+	created, err := repo.Create(context.Background(), product)
 	if err != nil {
 		t.Fatalf("Create retornou erro: %v", err)
 	}
@@ -73,7 +74,7 @@ func TestPostgresProductRepositoryCreateAndFindByID(t *testing.T) {
 		t.Errorf("produto recém-criado deveria estar ativo e não removido")
 	}
 
-	got, err := repo.FindByID(created.ID())
+	got, err := repo.FindByID(context.Background(), created.ID())
 	if err != nil {
 		t.Fatalf("FindByID retornou erro: %v", err)
 	}
@@ -81,7 +82,7 @@ func TestPostgresProductRepositoryCreateAndFindByID(t *testing.T) {
 		t.Errorf("produto lido = %#v; esperado = %#v", got, created)
 	}
 
-	_, err = repo.FindByID("00000000-0000-7000-8000-000000000000")
+	_, err = repo.FindByID(context.Background(), "00000000-0000-7000-8000-000000000000")
 	if !errors.Is(err, domain.ErrProductNotFound) {
 		t.Fatalf("FindByID inexistente = %v; esperado = %v", err, domain.ErrProductNotFound)
 	}
@@ -103,7 +104,7 @@ func TestPostgresProductRepositoryUpdate(t *testing.T) {
 			t.Fatalf("Update do domínio: %v", err)
 		}
 
-		updated, err := repo.Update(created)
+		updated, err := repo.Update(context.Background(), created)
 		if err != nil {
 			t.Fatalf("Repository.Update retornou erro: %v", err)
 		}
@@ -118,7 +119,7 @@ func TestPostgresProductRepositoryUpdate(t *testing.T) {
 			t.Fatalf("montar produto fantasma: %v", err)
 		}
 
-		_, err = repo.Update(ghost)
+		_, err = repo.Update(context.Background(), ghost)
 		if !errors.Is(err, domain.ErrProductNotFound) {
 			t.Fatalf("Update inexistente = %v; esperado = %v", err, domain.ErrProductNotFound)
 		}
@@ -126,7 +127,7 @@ func TestPostgresProductRepositoryUpdate(t *testing.T) {
 
 	t.Run("produto removido retorna ErrProductAlreadyDeleted", func(t *testing.T) {
 		created := mustCreateProduct(t, repo, "Produto Removido Update", "desc", 20, 2, nil)
-		if err := repo.DeleteByID(created.ID()); err != nil {
+		if err := repo.DeleteByID(context.Background(), created.ID()); err != nil {
 			t.Fatalf("DeleteByID: %v", err)
 		}
 
@@ -134,7 +135,7 @@ func TestPostgresProductRepositoryUpdate(t *testing.T) {
 			t.Fatalf("Update do domínio: %v", err)
 		}
 
-		_, err := repo.Update(created)
+		_, err := repo.Update(context.Background(), created)
 		if !errors.Is(err, domain.ErrProductAlreadyDeleted) {
 			t.Fatalf("Update de removido = %v; esperado = %v", err, domain.ErrProductAlreadyDeleted)
 		}
@@ -153,17 +154,17 @@ func TestPostgresProductRepositoryDeleteRestoreActivateDeactivate(t *testing.T) 
 	t.Run("delete e restore", func(t *testing.T) {
 		product := mustCreateProduct(t, repo, "Produto Delete", "desc", 10, 1, nil)
 
-		if err := repo.DeleteByID(product.ID()); err != nil {
+		if err := repo.DeleteByID(context.Background(), product.ID()); err != nil {
 			t.Fatalf("DeleteByID: %v", err)
 		}
-		if err := repo.DeleteByID(product.ID()); !errors.Is(err, domain.ErrProductAlreadyDeleted) {
+		if err := repo.DeleteByID(context.Background(), product.ID()); !errors.Is(err, domain.ErrProductAlreadyDeleted) {
 			t.Fatalf("segundo delete = %v; esperado = %v", err, domain.ErrProductAlreadyDeleted)
 		}
 
-		if err := repo.RestoreByID(product.ID()); err != nil {
+		if err := repo.RestoreByID(context.Background(), product.ID()); err != nil {
 			t.Fatalf("RestoreByID: %v", err)
 		}
-		if err := repo.RestoreByID(product.ID()); !errors.Is(err, domain.ErrProductNotDeleted) {
+		if err := repo.RestoreByID(context.Background(), product.ID()); !errors.Is(err, domain.ErrProductNotDeleted) {
 			t.Fatalf("segunda restauração = %v; esperado = %v", err, domain.ErrProductNotDeleted)
 		}
 	})
@@ -171,32 +172,32 @@ func TestPostgresProductRepositoryDeleteRestoreActivateDeactivate(t *testing.T) 
 	t.Run("activate e deactivate", func(t *testing.T) {
 		product := mustCreateProduct(t, repo, "Produto Activate", "desc", 10, 1, nil)
 
-		if err := repo.ActivateByID(product.ID()); !errors.Is(err, domain.ErrProductAlreadyActive) {
+		if err := repo.ActivateByID(context.Background(), product.ID()); !errors.Is(err, domain.ErrProductAlreadyActive) {
 			t.Fatalf("ativar produto já ativo = %v; esperado = %v", err, domain.ErrProductAlreadyActive)
 		}
 
-		if err := repo.DeactivateByID(product.ID()); err != nil {
+		if err := repo.DeactivateByID(context.Background(), product.ID()); err != nil {
 			t.Fatalf("DeactivateByID: %v", err)
 		}
-		if err := repo.DeactivateByID(product.ID()); !errors.Is(err, domain.ErrProductAlreadyInactive) {
+		if err := repo.DeactivateByID(context.Background(), product.ID()); !errors.Is(err, domain.ErrProductAlreadyInactive) {
 			t.Fatalf("desativar de novo = %v; esperado = %v", err, domain.ErrProductAlreadyInactive)
 		}
 
-		if err := repo.ActivateByID(product.ID()); err != nil {
+		if err := repo.ActivateByID(context.Background(), product.ID()); err != nil {
 			t.Fatalf("ActivateByID: %v", err)
 		}
 	})
 
 	t.Run("ativar/desativar um produto removido reporta a remoção", func(t *testing.T) {
 		product := mustCreateProduct(t, repo, "Produto Removido", "desc", 10, 1, nil)
-		if err := repo.DeleteByID(product.ID()); err != nil {
+		if err := repo.DeleteByID(context.Background(), product.ID()); err != nil {
 			t.Fatalf("DeleteByID: %v", err)
 		}
 
-		if err := repo.ActivateByID(product.ID()); !errors.Is(err, domain.ErrProductAlreadyDeleted) {
+		if err := repo.ActivateByID(context.Background(), product.ID()); !errors.Is(err, domain.ErrProductAlreadyDeleted) {
 			t.Fatalf("ativar produto removido = %v; esperado = %v", err, domain.ErrProductAlreadyDeleted)
 		}
-		if err := repo.DeactivateByID(product.ID()); !errors.Is(err, domain.ErrProductAlreadyDeleted) {
+		if err := repo.DeactivateByID(context.Background(), product.ID()); !errors.Is(err, domain.ErrProductAlreadyDeleted) {
 			t.Fatalf("desativar produto removido = %v; esperado = %v", err, domain.ErrProductAlreadyDeleted)
 		}
 	})
@@ -204,16 +205,16 @@ func TestPostgresProductRepositoryDeleteRestoreActivateDeactivate(t *testing.T) 
 	t.Run("qualquer operação num id inexistente retorna ErrProductNotFound", func(t *testing.T) {
 		const fakeID = "00000000-0000-7000-8000-000000000000"
 
-		if err := repo.DeleteByID(fakeID); !errors.Is(err, domain.ErrProductNotFound) {
+		if err := repo.DeleteByID(context.Background(), fakeID); !errors.Is(err, domain.ErrProductNotFound) {
 			t.Errorf("DeleteByID inexistente = %v; esperado = %v", err, domain.ErrProductNotFound)
 		}
-		if err := repo.RestoreByID(fakeID); !errors.Is(err, domain.ErrProductNotFound) {
+		if err := repo.RestoreByID(context.Background(), fakeID); !errors.Is(err, domain.ErrProductNotFound) {
 			t.Errorf("RestoreByID inexistente = %v; esperado = %v", err, domain.ErrProductNotFound)
 		}
-		if err := repo.ActivateByID(fakeID); !errors.Is(err, domain.ErrProductNotFound) {
+		if err := repo.ActivateByID(context.Background(), fakeID); !errors.Is(err, domain.ErrProductNotFound) {
 			t.Errorf("ActivateByID inexistente = %v; esperado = %v", err, domain.ErrProductNotFound)
 		}
-		if err := repo.DeactivateByID(fakeID); !errors.Is(err, domain.ErrProductNotFound) {
+		if err := repo.DeactivateByID(context.Background(), fakeID); !errors.Is(err, domain.ErrProductNotFound) {
 			t.Errorf("DeactivateByID inexistente = %v; esperado = %v", err, domain.ErrProductNotFound)
 		}
 	})
@@ -238,10 +239,10 @@ func TestPostgresProductRepositorySearch(t *testing.T) {
 	monitor := mustCreateProduct(t, repo, "Monitor 4K", "painel IPS", 1999.90, 5, &monitores)
 	antigo := mustCreateProduct(t, repo, "Teclado Mecânico Antigo", "descontinuado", 99.90, 0, &perifericos)
 
-	if err := repo.DeactivateByID(monitor.ID()); err != nil {
+	if err := repo.DeactivateByID(context.Background(), monitor.ID()); err != nil {
 		t.Fatalf("desativar monitor: %v", err)
 	}
-	if err := repo.DeleteByID(antigo.ID()); err != nil {
+	if err := repo.DeleteByID(context.Background(), antigo.ID()); err != nil {
 		t.Fatalf("remover teclado antigo: %v", err)
 	}
 
@@ -299,7 +300,7 @@ func TestPostgresProductRepositorySearch(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			result, err := repo.Search(testCase.filter)
+			result, err := repo.Search(context.Background(), testCase.filter)
 			if err != nil {
 				t.Fatalf("Search retornou erro: %v", err)
 			}
@@ -335,7 +336,7 @@ func TestPostgresProductRepositorySearchPagination(t *testing.T) {
 	const pageSize = 2
 
 	for offset := 0; offset < totalProducts; offset += pageSize {
-		page, err := repo.Search(ProductSearchFilter{Limit: pageSize, Offset: offset})
+		page, err := repo.Search(context.Background(), ProductSearchFilter{Limit: pageSize, Offset: offset})
 		if err != nil {
 			t.Fatalf("Search(offset=%d) retornou erro: %v", offset, err)
 		}

@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"testing"
@@ -24,35 +25,35 @@ type fakeProductService struct {
 	deactivateByIDFunc func(id string) error
 }
 
-func (fake *fakeProductService) Create(request dto.ProductRequest) (dto.ProductResponse, error) {
+func (fake *fakeProductService) Create(_ context.Context, request dto.ProductRequest) (dto.ProductResponse, error) {
 	return fake.createFunc(request)
 }
 
-func (fake *fakeProductService) Update(id string, request dto.ProductUpdateRequest) (dto.ProductResponse, error) {
+func (fake *fakeProductService) Update(_ context.Context, id string, request dto.ProductUpdateRequest) (dto.ProductResponse, error) {
 	return fake.updateFunc(id, request)
 }
 
-func (fake *fakeProductService) FindByID(id string) (dto.ProductResponse, error) {
+func (fake *fakeProductService) FindByID(_ context.Context, id string) (dto.ProductResponse, error) {
 	return fake.findByIDFunc(id)
 }
 
-func (fake *fakeProductService) Search(filter dto.ProductSearchRequest) (dto.ProductPageResponse, error) {
+func (fake *fakeProductService) Search(_ context.Context, filter dto.ProductSearchRequest) (dto.ProductPageResponse, error) {
 	return fake.searchFunc(filter)
 }
 
-func (fake *fakeProductService) DeleteByID(id string) error {
+func (fake *fakeProductService) DeleteByID(_ context.Context, id string) error {
 	return fake.deleteByIDFunc(id)
 }
 
-func (fake *fakeProductService) RestoreByID(id string) error {
+func (fake *fakeProductService) RestoreByID(_ context.Context, id string) error {
 	return fake.restoreByIDFunc(id)
 }
 
-func (fake *fakeProductService) ActivateByID(id string) error {
+func (fake *fakeProductService) ActivateByID(_ context.Context, id string) error {
 	return fake.activateByIDFunc(id)
 }
 
-func (fake *fakeProductService) DeactivateByID(id string) error {
+func (fake *fakeProductService) DeactivateByID(_ context.Context, id string) error {
 	return fake.deactivateByIDFunc(id)
 }
 

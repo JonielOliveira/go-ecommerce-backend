@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"testing"
 	"time"
@@ -26,35 +27,35 @@ type fakeUserRepository struct {
 	deactivateByIDFunc func(id string) error
 }
 
-func (fake *fakeUserRepository) Create(user *domain.User, passwordHash string) (*domain.User, error) {
+func (fake *fakeUserRepository) Create(_ context.Context, user *domain.User, passwordHash string) (*domain.User, error) {
 	return fake.createFunc(user, passwordHash)
 }
 
-func (fake *fakeUserRepository) Update(user *domain.User, passwordHash *string) (*domain.User, error) {
+func (fake *fakeUserRepository) Update(_ context.Context, user *domain.User, passwordHash *string) (*domain.User, error) {
 	return fake.updateFunc(user, passwordHash)
 }
 
-func (fake *fakeUserRepository) FindByID(id string) (*domain.User, error) {
+func (fake *fakeUserRepository) FindByID(_ context.Context, id string) (*domain.User, error) {
 	return fake.findByIDFunc(id)
 }
 
-func (fake *fakeUserRepository) Search(filter repository.UserSearchFilter) (*repository.UserSearchResult, error) {
+func (fake *fakeUserRepository) Search(_ context.Context, filter repository.UserSearchFilter) (*repository.UserSearchResult, error) {
 	return fake.searchFunc(filter)
 }
 
-func (fake *fakeUserRepository) DeleteByID(id string) error {
+func (fake *fakeUserRepository) DeleteByID(_ context.Context, id string) error {
 	return fake.deleteByIDFunc(id)
 }
 
-func (fake *fakeUserRepository) RestoreByID(id string) error {
+func (fake *fakeUserRepository) RestoreByID(_ context.Context, id string) error {
 	return fake.restoreByIDFunc(id)
 }
 
-func (fake *fakeUserRepository) ActivateByID(id string) error {
+func (fake *fakeUserRepository) ActivateByID(_ context.Context, id string) error {
 	return fake.activateByIDFunc(id)
 }
 
-func (fake *fakeUserRepository) DeactivateByID(id string) error {
+func (fake *fakeUserRepository) DeactivateByID(_ context.Context, id string) error {
 	return fake.deactivateByIDFunc(id)
 }
 
@@ -125,7 +126,7 @@ func TestUserServiceRegister(t *testing.T) {
 		}
 		userService := NewUserService(fakeRepository)
 
-		response, err := userService.Register(dto.RegisterRequest{
+		response, err := userService.Register(context.Background(), dto.RegisterRequest{
 			Name:     "Ana Souza",
 			Email:    "ana@example.com",
 			Password: "segredo123",
@@ -158,7 +159,7 @@ func TestUserServiceRegister(t *testing.T) {
 		}
 		userService := NewUserService(fakeRepository)
 
-		_, err := userService.Register(dto.RegisterRequest{
+		_, err := userService.Register(context.Background(), dto.RegisterRequest{
 			Name:     "",
 			Email:    "ana@example.com",
 			Password: "segredo123",
@@ -187,7 +188,7 @@ func TestUserServiceCreate(t *testing.T) {
 		}
 		userService := NewUserService(fakeRepository)
 
-		_, err := userService.Create(dto.CreateUserRequest{
+		_, err := userService.Create(context.Background(), dto.CreateUserRequest{
 			Name:     "Ana Souza",
 			Email:    "ana@example.com",
 			Password: "segredo123",
@@ -212,7 +213,7 @@ func TestUserServiceCreate(t *testing.T) {
 		userService := NewUserService(fakeRepository)
 
 		role := string(domain.RoleAdmin)
-		_, err := userService.Create(dto.CreateUserRequest{
+		_, err := userService.Create(context.Background(), dto.CreateUserRequest{
 			Name:     "Beto Lima",
 			Email:    "beto@example.com",
 			Password: "segredo123",
@@ -238,7 +239,7 @@ func TestUserServiceCreate(t *testing.T) {
 		userService := NewUserService(fakeRepository)
 
 		invalidRole := "superuser"
-		_, err := userService.Create(dto.CreateUserRequest{
+		_, err := userService.Create(context.Background(), dto.CreateUserRequest{
 			Name:     "Beto Lima",
 			Email:    "beto@example.com",
 			Password: "segredo123",
@@ -277,7 +278,7 @@ func TestUserServiceUpdate(t *testing.T) {
 		}
 		userService := NewUserService(fakeRepository)
 
-		response, err := userService.Update("user-1", dto.UserUpdateRequest{
+		response, err := userService.Update(context.Background(), "user-1", dto.UserUpdateRequest{
 			Name:  "Ana Souza Silva",
 			Email: "ana@example.com",
 			Role:  string(domain.RoleCustomer),
@@ -309,7 +310,7 @@ func TestUserServiceUpdate(t *testing.T) {
 		}
 		userService := NewUserService(fakeRepository)
 
-		_, err := userService.Update("user-1", dto.UserUpdateRequest{
+		_, err := userService.Update(context.Background(), "user-1", dto.UserUpdateRequest{
 			Name:     "Ana Souza",
 			Email:    "ana@example.com",
 			Role:     string(domain.RoleCustomer),
@@ -339,7 +340,7 @@ func TestUserServiceUpdate(t *testing.T) {
 		}
 		userService := NewUserService(fakeRepository)
 
-		_, err := userService.Update("user-2", dto.UserUpdateRequest{
+		_, err := userService.Update(context.Background(), "user-2", dto.UserUpdateRequest{
 			Name:  "Novo nome",
 			Email: "ana@example.com",
 			Role:  string(domain.RoleCustomer),
@@ -365,7 +366,7 @@ func TestUserServiceUpdate(t *testing.T) {
 		}
 		userService := NewUserService(fakeRepository)
 
-		_, err := userService.Update("user-3", dto.UserUpdateRequest{
+		_, err := userService.Update(context.Background(), "user-3", dto.UserUpdateRequest{
 			Name:  "Ana Souza",
 			Email: "email-invalido",
 			Role:  string(domain.RoleCustomer),
@@ -387,7 +388,7 @@ func TestUserServiceUpdate(t *testing.T) {
 		}
 		userService := NewUserService(fakeRepository)
 
-		_, err := userService.Update("user-404", dto.UserUpdateRequest{
+		_, err := userService.Update(context.Background(), "user-404", dto.UserUpdateRequest{
 			Name:  "Ana Souza",
 			Email: "ana@example.com",
 			Role:  string(domain.RoleCustomer),
@@ -448,7 +449,7 @@ func TestUserServiceSearch(t *testing.T) {
 			}
 			userService := NewUserService(fakeRepository)
 
-			response, err := userService.Search(testCase.request)
+			response, err := userService.Search(context.Background(), testCase.request)
 
 			if err != nil {
 				t.Fatalf("Search retornou erro inesperado: %v", err)
@@ -504,7 +505,7 @@ func TestUserServiceDelegatesOperations(t *testing.T) {
 			},
 		}
 
-		got, err := NewUserService(fakeRepository).FindByID("user-1")
+		got, err := NewUserService(fakeRepository).FindByID(context.Background(), "user-1")
 
 		if err != nil {
 			t.Fatalf("FindByID retornou erro inesperado: %v", err)
@@ -523,7 +524,7 @@ func TestUserServiceDelegatesOperations(t *testing.T) {
 			},
 		}
 
-		err := NewUserService(fakeRepository).DeleteByID("user-2")
+		err := NewUserService(fakeRepository).DeleteByID(context.Background(), "user-2")
 
 		if err != nil {
 			t.Fatalf("DeleteByID retornou erro inesperado: %v", err)
@@ -542,7 +543,7 @@ func TestUserServiceDelegatesOperations(t *testing.T) {
 			},
 		}
 
-		err := NewUserService(fakeRepository).RestoreByID("user-3")
+		err := NewUserService(fakeRepository).RestoreByID(context.Background(), "user-3")
 
 		if err != nil {
 			t.Fatalf("RestoreByID retornou erro inesperado: %v", err)
@@ -561,7 +562,7 @@ func TestUserServiceDelegatesOperations(t *testing.T) {
 			},
 		}
 
-		err := NewUserService(fakeRepository).ActivateByID("user-4")
+		err := NewUserService(fakeRepository).ActivateByID(context.Background(), "user-4")
 
 		if err != nil {
 			t.Fatalf("ActivateByID retornou erro inesperado: %v", err)
@@ -580,7 +581,7 @@ func TestUserServiceDelegatesOperations(t *testing.T) {
 			},
 		}
 
-		err := NewUserService(fakeRepository).DeactivateByID("user-5")
+		err := NewUserService(fakeRepository).DeactivateByID(context.Background(), "user-5")
 
 		if err != nil {
 			t.Fatalf("DeactivateByID retornou erro inesperado: %v", err)

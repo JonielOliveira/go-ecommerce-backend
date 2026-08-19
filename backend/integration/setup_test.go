@@ -131,7 +131,7 @@ func (app *testApp) newClient(t *testing.T) *http.Client {
 func registerAndLoginCustomer(t *testing.T, app *testApp, name, email, password string) *http.Client {
 	t.Helper()
 
-	if _, err := app.UserService.Register(dto.RegisterRequest{Name: name, Email: email, Password: password}); err != nil {
+	if _, err := app.UserService.Register(context.Background(), dto.RegisterRequest{Name: name, Email: email, Password: password}); err != nil {
 		t.Fatalf("registrar cliente %q: %v", email, err)
 	}
 
@@ -154,7 +154,7 @@ func createAndLoginAdmin(t *testing.T, app *testApp, name, email, password strin
 	t.Helper()
 
 	role := "admin"
-	if _, err := app.UserService.Create(dto.CreateUserRequest{Name: name, Email: email, Password: password, Role: &role}); err != nil {
+	if _, err := app.UserService.Create(context.Background(), dto.CreateUserRequest{Name: name, Email: email, Password: password, Role: &role}); err != nil {
 		t.Fatalf("preparar admin %q: %v", email, err)
 	}
 

@@ -41,7 +41,7 @@ func (h *ProductHandler) Create(c *gin.Context) {
 		return
 	}
 
-	response, err := h.service.Create(request)
+	response, err := h.service.Create(c.Request.Context(), request)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
@@ -80,7 +80,7 @@ func (h *ProductHandler) Update(c *gin.Context) {
 		return
 	}
 
-	response, err := h.service.Update(id, request)
+	response, err := h.service.Update(c.Request.Context(), id, request)
 	if err != nil {
 		switch {
 		case errors.Is(err, domain.ErrProductNotFound):
@@ -126,7 +126,7 @@ func (h *ProductHandler) Update(c *gin.Context) {
 func (h *ProductHandler) FindByID(c *gin.Context) {
 	id := c.Param("id")
 
-	response, err := h.service.FindByID(id)
+	response, err := h.service.FindByID(c.Request.Context(), id)
 	if err != nil {
 		if errors.Is(err, domain.ErrProductNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{
@@ -182,7 +182,7 @@ func (h *ProductHandler) Search(c *gin.Context) {
 		return
 	}
 
-	response, err := h.service.Search(request)
+	response, err := h.service.Search(c.Request.Context(), request)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "erro interno do servidor",
@@ -209,7 +209,7 @@ func (h *ProductHandler) Search(c *gin.Context) {
 func (h *ProductHandler) DeleteByID(c *gin.Context) {
 	id := c.Param("id")
 
-	if err := h.service.DeleteByID(id); err != nil {
+	if err := h.service.DeleteByID(c.Request.Context(), id); err != nil {
 		switch {
 		case errors.Is(err, domain.ErrProductNotFound):
 			c.JSON(http.StatusNotFound, gin.H{
@@ -249,7 +249,7 @@ func (h *ProductHandler) DeleteByID(c *gin.Context) {
 func (h *ProductHandler) RestoreByID(c *gin.Context) {
 	id := c.Param("id")
 
-	if err := h.service.RestoreByID(id); err != nil {
+	if err := h.service.RestoreByID(c.Request.Context(), id); err != nil {
 		switch {
 		case errors.Is(err, domain.ErrProductNotFound):
 			c.JSON(http.StatusNotFound, gin.H{
@@ -289,7 +289,7 @@ func (h *ProductHandler) RestoreByID(c *gin.Context) {
 func (h *ProductHandler) ActivateByID(c *gin.Context) {
 	id := c.Param("id")
 
-	if err := h.service.ActivateByID(id); err != nil {
+	if err := h.service.ActivateByID(c.Request.Context(), id); err != nil {
 		switch {
 		case errors.Is(err, domain.ErrProductNotFound):
 			c.JSON(http.StatusNotFound, gin.H{
@@ -334,7 +334,7 @@ func (h *ProductHandler) ActivateByID(c *gin.Context) {
 func (h *ProductHandler) DeactivateByID(c *gin.Context) {
 	id := c.Param("id")
 
-	if err := h.service.DeactivateByID(id); err != nil {
+	if err := h.service.DeactivateByID(c.Request.Context(), id); err != nil {
 		switch {
 		case errors.Is(err, domain.ErrProductNotFound):
 			c.JSON(http.StatusNotFound, gin.H{

@@ -2,10 +2,12 @@ package service
 
 import (
 	"context"
+	"log/slog"
 	"strings"
 	"time"
 
 	"ecommerce/internal/domain"
+	"ecommerce/internal/logging"
 	"ecommerce/internal/repository"
 	"ecommerce/internal/security"
 
@@ -37,6 +39,24 @@ func NewAuthService(repository repository.AuthRepository, jwtService security.JW
 	}
 }
 
+// logLoginFailure registra uma tentativa de login malsucedida. Antes de
+// encontrar o usuário pelo e-mail só o e-mail está disponível; a partir daí,
+// usa-se o user_id — nunca a senha, que não chega perto do logger.
+func logLoginFailure(ctx context.Context, email string, userID string, err error) {
+	attrs := []any{
+		slog.String("operation", "auth.login"),
+		slog.String("error", err.Error()),
+	}
+
+	if userID != "" {
+		attrs = append(attrs, slog.String("user_id", userID))
+	} else {
+		attrs = append(attrs, slog.String("email", email))
+	}
+
+	logging.FromContext(ctx).Warn("falha no login", attrs...)
+}
+
 func (s *authService) Login(
 	ctx context.Context,
 	email string,
@@ -46,6 +66,7 @@ func (s *authService) Login(
 
 	auth, err := s.repository.FindAuthenticationByEmail(ctx, email)
 	if err != nil {
+		logLoginFailure(ctx, email, "", err)
 		return nil, "", time.Time{}, err
 	}
 
@@ -53,19 +74,27 @@ func (s *authService) Login(
 		[]byte(auth.PasswordHash),
 		[]byte(password),
 	); err != nil {
+		logLoginFailure(ctx, email, auth.UserID, domain.ErrInvalidCredentials)
 		return nil, "", time.Time{}, domain.ErrInvalidCredentials
 	}
 
 	if auth.IsDeleted() {
+		logLoginFailure(ctx, email, auth.UserID, domain.ErrInvalidCredentials)
 		return nil, "", time.Time{}, domain.ErrInvalidCredentials
 	}
 
 	if !auth.Active {
+		logLoginFailure(ctx, email, auth.UserID, domain.ErrUserInactive)
 		return nil, "", time.Time{}, domain.ErrUserInactive
 	}
 
 	token, expiresAt, err := s.jwtService.GenerateAccessToken(auth.UserID)
 	if err != nil {
+		logging.FromContext(ctx).Error("falha ao gerar token de acesso",
+			slog.String("operation", "auth.login"),
+			slog.String("user_id", auth.UserID),
+			slog.String("error", err.Error()),
+		)
 		return nil, "", time.Time{}, err
 	}
 
@@ -79,6 +108,11 @@ func (s *authService) Login(
 		Email: auth.Email,
 		Role:  auth.Role,
 	}
+
+	logging.FromContext(ctx).Info("login realizado",
+		slog.String("operation", "auth.login"),
+		slog.String("user_id", user.ID),
+	)
 
 	return user, token, expiresAt, nil
 }

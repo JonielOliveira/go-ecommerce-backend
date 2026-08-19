@@ -26,7 +26,7 @@ func NewPostgresProductRepository(db *pgxpool.Pool) *PostgresProductRepository {
 	return &PostgresProductRepository{db: db}
 }
 
-func (r *PostgresProductRepository) findState(id string) (*productState, error) {
+func (r *PostgresProductRepository) findState(ctx context.Context, id string) (*productState, error) {
 	const query = `
 		SELECT active, deleted_at
 		FROM products
@@ -36,7 +36,7 @@ func (r *PostgresProductRepository) findState(id string) (*productState, error) 
 	var state productState
 
 	err := r.db.QueryRow(
-		context.Background(),
+		ctx,
 		query,
 		id,
 	).Scan(
@@ -55,7 +55,7 @@ func (r *PostgresProductRepository) findState(id string) (*productState, error) 
 	return &state, nil
 }
 
-func (r *PostgresProductRepository) Create(product *domain.Product) (*domain.Product, error) {
+func (r *PostgresProductRepository) Create(ctx context.Context, product *domain.Product) (*domain.Product, error) {
 	const query = `
 		INSERT INTO products (
 			name, description, price, stock, category_id, image_url
@@ -81,7 +81,7 @@ func (r *PostgresProductRepository) Create(product *domain.Product) (*domain.Pro
 	)
 
 	err := r.db.QueryRow(
-		context.Background(),
+		ctx,
 		query,
 		product.Name(),
 		product.Description(),
@@ -121,7 +121,7 @@ func (r *PostgresProductRepository) Create(product *domain.Product) (*domain.Pro
 	)
 }
 
-func (r *PostgresProductRepository) Update(product *domain.Product) (*domain.Product, error) {
+func (r *PostgresProductRepository) Update(ctx context.Context, product *domain.Product) (*domain.Product, error) {
 	const query = `
 		UPDATE products
 		SET
@@ -163,7 +163,7 @@ func (r *PostgresProductRepository) Update(product *domain.Product) (*domain.Pro
 	)
 
 	err := r.db.QueryRow(
-		context.Background(),
+		ctx,
 		query,
 		product.Name(),
 		product.Description(),
@@ -187,7 +187,7 @@ func (r *PostgresProductRepository) Update(product *domain.Product) (*domain.Pro
 	)
 
 	if errors.Is(err, pgx.ErrNoRows) {
-		state, stateErr := r.findState(product.ID())
+		state, stateErr := r.findState(ctx, product.ID())
 		if stateErr != nil {
 			return nil, stateErr
 		}
@@ -218,7 +218,7 @@ func (r *PostgresProductRepository) Update(product *domain.Product) (*domain.Pro
 	)
 }
 
-func (r *PostgresProductRepository) FindByID(id string) (*domain.Product, error) {
+func (r *PostgresProductRepository) FindByID(ctx context.Context, id string) (*domain.Product, error) {
 	const query = `
 		SELECT
 			id,
@@ -251,7 +251,7 @@ func (r *PostgresProductRepository) FindByID(id string) (*domain.Product, error)
 	)
 
 	err := r.db.QueryRow(
-		context.Background(),
+		ctx,
 		query,
 		id,
 	).Scan(
@@ -357,7 +357,7 @@ func buildProductFilters(filter ProductSearchFilter) (string, []any) {
 	return " WHERE " + strings.Join(conditions, " AND "), args
 }
 
-func (r *PostgresProductRepository) Search(filter ProductSearchFilter) (*ProductSearchResult, error) {
+func (r *PostgresProductRepository) Search(ctx context.Context, filter ProductSearchFilter) (*ProductSearchResult, error) {
 	whereClause, args := buildProductFilters(filter)
 
 	countQuery := `
@@ -368,7 +368,7 @@ func (r *PostgresProductRepository) Search(filter ProductSearchFilter) (*Product
 	var total int64
 
 	if err := r.db.QueryRow(
-		context.Background(),
+		ctx,
 		countQuery,
 		args...,
 	).Scan(&total); err != nil {
@@ -402,7 +402,7 @@ func (r *PostgresProductRepository) Search(filter ProductSearchFilter) (*Product
 	)
 
 	rows, err := r.db.Query(
-		context.Background(),
+		ctx,
 		selectQuery,
 		selectArgs...,
 	)
@@ -474,7 +474,7 @@ func (r *PostgresProductRepository) Search(filter ProductSearchFilter) (*Product
 	}, nil
 }
 
-func (r *PostgresProductRepository) DeleteByID(id string) error {
+func (r *PostgresProductRepository) DeleteByID(ctx context.Context, id string) error {
 	const query = `
 		UPDATE products
 		SET
@@ -489,7 +489,7 @@ func (r *PostgresProductRepository) DeleteByID(id string) error {
 	var productID string
 
 	err := r.db.QueryRow(
-		context.Background(),
+		ctx,
 		query,
 		id,
 	).Scan(&productID)
@@ -502,7 +502,7 @@ func (r *PostgresProductRepository) DeleteByID(id string) error {
 		return err
 	}
 
-	state, err := r.findState(id)
+	state, err := r.findState(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -514,7 +514,7 @@ func (r *PostgresProductRepository) DeleteByID(id string) error {
 	return nil
 }
 
-func (r *PostgresProductRepository) RestoreByID(id string) error {
+func (r *PostgresProductRepository) RestoreByID(ctx context.Context, id string) error {
 	const query = `
 		UPDATE products
 		SET
@@ -529,7 +529,7 @@ func (r *PostgresProductRepository) RestoreByID(id string) error {
 	var productID string
 
 	err := r.db.QueryRow(
-		context.Background(),
+		ctx,
 		query,
 		id,
 	).Scan(&productID)
@@ -542,7 +542,7 @@ func (r *PostgresProductRepository) RestoreByID(id string) error {
 		return err
 	}
 
-	state, err := r.findState(id)
+	state, err := r.findState(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -554,7 +554,7 @@ func (r *PostgresProductRepository) RestoreByID(id string) error {
 	return nil
 }
 
-func (r *PostgresProductRepository) ActivateByID(id string) error {
+func (r *PostgresProductRepository) ActivateByID(ctx context.Context, id string) error {
 	const query = `
 		UPDATE products
 		SET
@@ -569,7 +569,7 @@ func (r *PostgresProductRepository) ActivateByID(id string) error {
 	var productID string
 
 	err := r.db.QueryRow(
-		context.Background(),
+		ctx,
 		query,
 		id,
 	).Scan(&productID)
@@ -582,7 +582,7 @@ func (r *PostgresProductRepository) ActivateByID(id string) error {
 		return err
 	}
 
-	state, err := r.findState(id)
+	state, err := r.findState(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -598,7 +598,7 @@ func (r *PostgresProductRepository) ActivateByID(id string) error {
 	return nil
 }
 
-func (r *PostgresProductRepository) DeactivateByID(id string) error {
+func (r *PostgresProductRepository) DeactivateByID(ctx context.Context, id string) error {
 	const query = `
 		UPDATE products
 		SET
@@ -613,7 +613,7 @@ func (r *PostgresProductRepository) DeactivateByID(id string) error {
 	var productID string
 
 	err := r.db.QueryRow(
-		context.Background(),
+		ctx,
 		query,
 		id,
 	).Scan(&productID)
@@ -626,7 +626,7 @@ func (r *PostgresProductRepository) DeactivateByID(id string) error {
 		return err
 	}
 
-	state, err := r.findState(id)
+	state, err := r.findState(ctx, id)
 	if err != nil {
 		return err
 	}

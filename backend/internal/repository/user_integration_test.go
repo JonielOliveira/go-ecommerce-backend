@@ -3,6 +3,7 @@
 package repository
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"testing"
@@ -23,7 +24,7 @@ func mustCreateUser(t *testing.T, repo *PostgresUserRepository, name, email stri
 		t.Fatalf("montar usuário de teste %q: %v", email, err)
 	}
 
-	created, err := repo.Create(user, "hash-fake-de-teste")
+	created, err := repo.Create(context.Background(), user, "hash-fake-de-teste")
 	if err != nil {
 		t.Fatalf("criar usuário de teste %q: %v", email, err)
 	}
@@ -46,7 +47,7 @@ func TestPostgresUserRepositoryCreateAndFindByID(t *testing.T) {
 		t.Errorf("usuário criado = %#v", created)
 	}
 
-	got, err := repo.FindByID(created.ID())
+	got, err := repo.FindByID(context.Background(), created.ID())
 	if err != nil {
 		t.Fatalf("FindByID retornou erro: %v", err)
 	}
@@ -54,7 +55,7 @@ func TestPostgresUserRepositoryCreateAndFindByID(t *testing.T) {
 		t.Errorf("usuário lido = %#v; esperado = %#v", got, created)
 	}
 
-	_, err = repo.FindByID("00000000-0000-7000-8000-000000000000")
+	_, err = repo.FindByID(context.Background(), "00000000-0000-7000-8000-000000000000")
 	if !errors.Is(err, domain.ErrUserNotFound) {
 		t.Fatalf("FindByID inexistente = %v; esperado = %v", err, domain.ErrUserNotFound)
 	}
@@ -65,7 +66,7 @@ func TestPostgresUserRepositoryCreateAndFindByID(t *testing.T) {
 			t.Fatalf("montar usuário duplicado: %v", err)
 		}
 
-		_, err = repo.Create(duplicate, "hash-fake-de-teste")
+		_, err = repo.Create(context.Background(), duplicate, "hash-fake-de-teste")
 		if !errors.Is(err, domain.ErrUserEmailAlreadyExists) {
 			t.Fatalf("erro = %v; esperado = %v", err, domain.ErrUserEmailAlreadyExists)
 		}
@@ -87,7 +88,7 @@ func TestPostgresUserRepositoryUpdate(t *testing.T) {
 			t.Fatalf("Update do domínio: %v", err)
 		}
 
-		updated, err := repo.Update(created, nil)
+		updated, err := repo.Update(context.Background(), created, nil)
 		if err != nil {
 			t.Fatalf("Repository.Update retornou erro: %v", err)
 		}
@@ -102,7 +103,7 @@ func TestPostgresUserRepositoryUpdate(t *testing.T) {
 			t.Fatalf("montar usuário fantasma: %v", err)
 		}
 
-		_, err = repo.Update(ghost, nil)
+		_, err = repo.Update(context.Background(), ghost, nil)
 		if !errors.Is(err, domain.ErrUserNotFound) {
 			t.Fatalf("Update inexistente = %v; esperado = %v", err, domain.ErrUserNotFound)
 		}
@@ -110,7 +111,7 @@ func TestPostgresUserRepositoryUpdate(t *testing.T) {
 
 	t.Run("usuário removido retorna ErrUserAlreadyDeleted", func(t *testing.T) {
 		created := mustCreateUser(t, repo, "Usuário Removido Update", "usuario.removido.update@example.com", domain.RoleCustomer)
-		if err := repo.DeleteByID(created.ID()); err != nil {
+		if err := repo.DeleteByID(context.Background(), created.ID()); err != nil {
 			t.Fatalf("DeleteByID: %v", err)
 		}
 
@@ -118,7 +119,7 @@ func TestPostgresUserRepositoryUpdate(t *testing.T) {
 			t.Fatalf("Update do domínio: %v", err)
 		}
 
-		_, err := repo.Update(created, nil)
+		_, err := repo.Update(context.Background(), created, nil)
 		if !errors.Is(err, domain.ErrUserAlreadyDeleted) {
 			t.Fatalf("Update de removido = %v; esperado = %v", err, domain.ErrUserAlreadyDeleted)
 		}
@@ -132,7 +133,7 @@ func TestPostgresUserRepositoryUpdate(t *testing.T) {
 			t.Fatalf("Update do domínio: %v", err)
 		}
 
-		_, err := repo.Update(second, nil)
+		_, err := repo.Update(context.Background(), second, nil)
 		if !errors.Is(err, domain.ErrUserEmailAlreadyExists) {
 			t.Fatalf("erro = %v; esperado = %v", err, domain.ErrUserEmailAlreadyExists)
 		}
@@ -148,21 +149,21 @@ func TestPostgresUserRepositoryDeleteRestoreActivateDeactivate(t *testing.T) {
 	t.Run("delete e restore", func(t *testing.T) {
 		user := mustCreateUser(t, repo, "Usuário Delete", "usuario.delete@example.com", domain.RoleCustomer)
 
-		if err := repo.DeleteByID(user.ID()); err != nil {
+		if err := repo.DeleteByID(context.Background(), user.ID()); err != nil {
 			t.Fatalf("DeleteByID: %v", err)
 		}
-		if err := repo.DeleteByID(user.ID()); !errors.Is(err, domain.ErrUserAlreadyDeleted) {
+		if err := repo.DeleteByID(context.Background(), user.ID()); !errors.Is(err, domain.ErrUserAlreadyDeleted) {
 			t.Fatalf("segundo delete = %v; esperado = %v", err, domain.ErrUserAlreadyDeleted)
 		}
 
-		if err := repo.RestoreByID(user.ID()); err != nil {
+		if err := repo.RestoreByID(context.Background(), user.ID()); err != nil {
 			t.Fatalf("RestoreByID: %v", err)
 		}
-		if err := repo.RestoreByID(user.ID()); !errors.Is(err, domain.ErrUserNotDeleted) {
+		if err := repo.RestoreByID(context.Background(), user.ID()); !errors.Is(err, domain.ErrUserNotDeleted) {
 			t.Fatalf("segunda restauração = %v; esperado = %v", err, domain.ErrUserNotDeleted)
 		}
 
-		got, err := repo.FindByID(user.ID())
+		got, err := repo.FindByID(context.Background(), user.ID())
 		if err != nil {
 			t.Fatalf("FindByID: %v", err)
 		}
@@ -174,32 +175,32 @@ func TestPostgresUserRepositoryDeleteRestoreActivateDeactivate(t *testing.T) {
 	t.Run("activate e deactivate", func(t *testing.T) {
 		user := mustCreateUser(t, repo, "Usuário Activate", "usuario.activate@example.com", domain.RoleCustomer)
 
-		if err := repo.ActivateByID(user.ID()); !errors.Is(err, domain.ErrUserAlreadyActive) {
+		if err := repo.ActivateByID(context.Background(), user.ID()); !errors.Is(err, domain.ErrUserAlreadyActive) {
 			t.Fatalf("ativar usuário já ativo = %v; esperado = %v", err, domain.ErrUserAlreadyActive)
 		}
 
-		if err := repo.DeactivateByID(user.ID()); err != nil {
+		if err := repo.DeactivateByID(context.Background(), user.ID()); err != nil {
 			t.Fatalf("DeactivateByID: %v", err)
 		}
-		if err := repo.DeactivateByID(user.ID()); !errors.Is(err, domain.ErrUserAlreadyInactive) {
+		if err := repo.DeactivateByID(context.Background(), user.ID()); !errors.Is(err, domain.ErrUserAlreadyInactive) {
 			t.Fatalf("desativar de novo = %v; esperado = %v", err, domain.ErrUserAlreadyInactive)
 		}
 
-		if err := repo.ActivateByID(user.ID()); err != nil {
+		if err := repo.ActivateByID(context.Background(), user.ID()); err != nil {
 			t.Fatalf("ActivateByID: %v", err)
 		}
 	})
 
 	t.Run("ativar/desativar um usuário removido reporta a remoção", func(t *testing.T) {
 		user := mustCreateUser(t, repo, "Usuário Removido", "usuario.removido.estado@example.com", domain.RoleCustomer)
-		if err := repo.DeleteByID(user.ID()); err != nil {
+		if err := repo.DeleteByID(context.Background(), user.ID()); err != nil {
 			t.Fatalf("DeleteByID: %v", err)
 		}
 
-		if err := repo.ActivateByID(user.ID()); !errors.Is(err, domain.ErrUserAlreadyDeleted) {
+		if err := repo.ActivateByID(context.Background(), user.ID()); !errors.Is(err, domain.ErrUserAlreadyDeleted) {
 			t.Fatalf("ativar usuário removido = %v; esperado = %v", err, domain.ErrUserAlreadyDeleted)
 		}
-		if err := repo.DeactivateByID(user.ID()); !errors.Is(err, domain.ErrUserAlreadyDeleted) {
+		if err := repo.DeactivateByID(context.Background(), user.ID()); !errors.Is(err, domain.ErrUserAlreadyDeleted) {
 			t.Fatalf("desativar usuário removido = %v; esperado = %v", err, domain.ErrUserAlreadyDeleted)
 		}
 	})
@@ -207,16 +208,16 @@ func TestPostgresUserRepositoryDeleteRestoreActivateDeactivate(t *testing.T) {
 	t.Run("qualquer operação num id inexistente retorna ErrUserNotFound", func(t *testing.T) {
 		const fakeID = "00000000-0000-7000-8000-000000000000"
 
-		if err := repo.DeleteByID(fakeID); !errors.Is(err, domain.ErrUserNotFound) {
+		if err := repo.DeleteByID(context.Background(), fakeID); !errors.Is(err, domain.ErrUserNotFound) {
 			t.Errorf("DeleteByID inexistente = %v; esperado = %v", err, domain.ErrUserNotFound)
 		}
-		if err := repo.RestoreByID(fakeID); !errors.Is(err, domain.ErrUserNotFound) {
+		if err := repo.RestoreByID(context.Background(), fakeID); !errors.Is(err, domain.ErrUserNotFound) {
 			t.Errorf("RestoreByID inexistente = %v; esperado = %v", err, domain.ErrUserNotFound)
 		}
-		if err := repo.ActivateByID(fakeID); !errors.Is(err, domain.ErrUserNotFound) {
+		if err := repo.ActivateByID(context.Background(), fakeID); !errors.Is(err, domain.ErrUserNotFound) {
 			t.Errorf("ActivateByID inexistente = %v; esperado = %v", err, domain.ErrUserNotFound)
 		}
-		if err := repo.DeactivateByID(fakeID); !errors.Is(err, domain.ErrUserNotFound) {
+		if err := repo.DeactivateByID(context.Background(), fakeID); !errors.Is(err, domain.ErrUserNotFound) {
 			t.Errorf("DeactivateByID inexistente = %v; esperado = %v", err, domain.ErrUserNotFound)
 		}
 	})
@@ -234,10 +235,10 @@ func TestPostgresUserRepositorySearch(t *testing.T) {
 	carla := mustCreateUser(t, repo, "Carla Dias", "carla.busca.repo@example.com", domain.RoleCustomer)
 	anaPereira := mustCreateUser(t, repo, "Ana Pereira", "ana.pereira.busca.repo@example.com", domain.RoleCustomer)
 
-	if err := repo.DeactivateByID(carla.ID()); err != nil {
+	if err := repo.DeactivateByID(context.Background(), carla.ID()); err != nil {
 		t.Fatalf("desativar carla: %v", err)
 	}
-	if err := repo.DeleteByID(anaPereira.ID()); err != nil {
+	if err := repo.DeleteByID(context.Background(), anaPereira.ID()); err != nil {
 		t.Fatalf("remover ana pereira: %v", err)
 	}
 
@@ -300,7 +301,7 @@ func TestPostgresUserRepositorySearch(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			result, err := repo.Search(testCase.filter)
+			result, err := repo.Search(context.Background(), testCase.filter)
 			if err != nil {
 				t.Fatalf("Search retornou erro: %v", err)
 			}
@@ -335,7 +336,7 @@ func TestPostgresUserRepositorySearchPagination(t *testing.T) {
 	const pageSize = 2
 
 	for offset := 0; offset < totalUsers; offset += pageSize {
-		page, err := repo.Search(UserSearchFilter{Limit: pageSize, Offset: offset})
+		page, err := repo.Search(context.Background(), UserSearchFilter{Limit: pageSize, Offset: offset})
 		if err != nil {
 			t.Fatalf("Search(offset=%d) retornou erro: %v", offset, err)
 		}

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"log/slog"
 
@@ -23,7 +24,7 @@ const (
 func seedDefaultAdmin(logger *slog.Logger, userService service.UserService) {
 	role := string(domain.RoleAdmin)
 
-	_, err := userService.Create(dto.CreateUserRequest{
+	_, err := userService.Create(context.Background(), dto.CreateUserRequest{
 		Name:     defaultAdminName,
 		Email:    defaultAdminEmail,
 		Password: defaultAdminPassword,

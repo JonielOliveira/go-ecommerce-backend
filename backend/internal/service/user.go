@@ -1,8 +1,12 @@
 package service
 
 import (
+	"context"
+	"log/slog"
+
 	"ecommerce/internal/domain"
 	"ecommerce/internal/dto"
+	"ecommerce/internal/logging"
 	"ecommerce/internal/mapper"
 	"ecommerce/internal/repository"
 
@@ -12,15 +16,15 @@ import (
 // UserService declara os casos de uso de usuário consumidos pelo Handler.
 // O tipo concreto abaixo satisfaz o contrato implicitamente.
 type UserService interface {
-	Register(request dto.RegisterRequest) (dto.UserResponse, error)
-	Create(request dto.CreateUserRequest) (dto.UserResponse, error)
-	Update(id string, request dto.UserUpdateRequest) (dto.UserResponse, error)
-	FindByID(id string) (dto.UserResponse, error)
-	Search(filter dto.UserSearchRequest) (dto.UserPageResponse, error)
-	DeleteByID(id string) error
-	RestoreByID(id string) error
-	ActivateByID(id string) error
-	DeactivateByID(id string) error
+	Register(ctx context.Context, request dto.RegisterRequest) (dto.UserResponse, error)
+	Create(ctx context.Context, request dto.CreateUserRequest) (dto.UserResponse, error)
+	Update(ctx context.Context, id string, request dto.UserUpdateRequest) (dto.UserResponse, error)
+	FindByID(ctx context.Context, id string) (dto.UserResponse, error)
+	Search(ctx context.Context, filter dto.UserSearchRequest) (dto.UserPageResponse, error)
+	DeleteByID(ctx context.Context, id string) error
+	RestoreByID(ctx context.Context, id string) error
+	ActivateByID(ctx context.Context, id string) error
+	DeactivateByID(ctx context.Context, id string) error
 }
 
 type userService struct {
@@ -53,7 +57,7 @@ type CreateUserInput struct {
 	AvatarURL *string
 }
 
-func (s *userService) createUser(input CreateUserInput) (dto.UserResponse, error) {
+func (s *userService) createUser(ctx context.Context, input CreateUserInput) (dto.UserResponse, error) {
 	user, err := domain.NewUser(input.Name, input.Email, input.Role, input.AvatarURL)
 	if err != nil {
 		return dto.UserResponse{}, err
@@ -64,7 +68,7 @@ func (s *userService) createUser(input CreateUserInput) (dto.UserResponse, error
 		return dto.UserResponse{}, err
 	}
 
-	createdUser, err := s.repository.Create(user, passwordHash)
+	createdUser, err := s.repository.Create(ctx, user, passwordHash)
 	if err != nil {
 		return dto.UserResponse{}, err
 	}
@@ -74,18 +78,32 @@ func (s *userService) createUser(input CreateUserInput) (dto.UserResponse, error
 
 // Register é o autocadastro público (POST /auth/register): sempre cria um
 // usuário "customer", sem exceção.
-func (s *userService) Register(request dto.RegisterRequest) (dto.UserResponse, error) {
-	return s.createUser(CreateUserInput{
+func (s *userService) Register(ctx context.Context, request dto.RegisterRequest) (dto.UserResponse, error) {
+	response, err := s.createUser(ctx, CreateUserInput{
 		Name:     request.Name,
 		Email:    request.Email,
 		Password: request.Password,
 		Role:     domain.RoleCustomer,
 	})
+	if err != nil {
+		logging.FromContext(ctx).Warn("falha no autocadastro",
+			slog.String("operation", "user.register"),
+			slog.String("error", err.Error()),
+		)
+		return dto.UserResponse{}, err
+	}
+
+	logging.FromContext(ctx).Info("usuário registrado",
+		slog.String("operation", "user.register"),
+		slog.String("user_id", response.ID),
+	)
+
+	return response, nil
 }
 
 // Create é a criação administrativa (POST /users, restrita a admins):
 // aceita um papel opcional, com "customer" como padrão quando omitido.
-func (s *userService) Create(request dto.CreateUserRequest) (dto.UserResponse, error) {
+func (s *userService) Create(ctx context.Context, request dto.CreateUserRequest) (dto.UserResponse, error) {
 	role := domain.RoleCustomer
 
 	if request.Role != nil {
@@ -96,17 +114,32 @@ func (s *userService) Create(request dto.CreateUserRequest) (dto.UserResponse, e
 		return dto.UserResponse{}, domain.ErrInvalidUserRole
 	}
 
-	return s.createUser(CreateUserInput{
+	response, err := s.createUser(ctx, CreateUserInput{
 		Name:      request.Name,
 		Email:     request.Email,
 		Password:  request.Password,
 		Role:      role,
 		AvatarURL: request.AvatarURL,
 	})
+	if err != nil {
+		logging.FromContext(ctx).Warn("falha ao criar usuário",
+			slog.String("operation", "user.create"),
+			slog.String("error", err.Error()),
+		)
+		return dto.UserResponse{}, err
+	}
+
+	logging.FromContext(ctx).Info("usuário criado",
+		slog.String("operation", "user.create"),
+		slog.String("user_id", response.ID),
+		slog.String("role", response.Role),
+	)
+
+	return response, nil
 }
 
-func (s *userService) Update(id string, request dto.UserUpdateRequest) (dto.UserResponse, error) {
-	user, err := s.repository.FindByID(id)
+func (s *userService) Update(ctx context.Context, id string, request dto.UserUpdateRequest) (dto.UserResponse, error) {
+	user, err := s.repository.FindByID(ctx, id)
 	if err != nil {
 		return dto.UserResponse{}, err
 	}
@@ -135,16 +168,26 @@ func (s *userService) Update(id string, request dto.UserUpdateRequest) (dto.User
 		passwordHash = &hash
 	}
 
-	updatedUser, err := s.repository.Update(user, passwordHash)
+	updatedUser, err := s.repository.Update(ctx, user, passwordHash)
 	if err != nil {
+		logging.FromContext(ctx).Warn("falha ao atualizar usuário",
+			slog.String("operation", "user.update"),
+			slog.String("user_id", id),
+			slog.String("error", err.Error()),
+		)
 		return dto.UserResponse{}, err
 	}
+
+	logging.FromContext(ctx).Info("usuário atualizado",
+		slog.String("operation", "user.update"),
+		slog.String("user_id", updatedUser.ID()),
+	)
 
 	return mapper.NewUserResponse(updatedUser), nil
 }
 
-func (s *userService) FindByID(id string) (dto.UserResponse, error) {
-	user, err := s.repository.FindByID(id)
+func (s *userService) FindByID(ctx context.Context, id string) (dto.UserResponse, error) {
+	user, err := s.repository.FindByID(ctx, id)
 	if err != nil {
 		return dto.UserResponse{}, err
 	}
@@ -165,7 +208,7 @@ func mapUserDeletionFilter(state dto.DeletionState) repository.DeletionFilter {
 	}
 }
 
-func (s *userService) Search(filter dto.UserSearchRequest) (dto.UserPageResponse, error) {
+func (s *userService) Search(ctx context.Context, filter dto.UserSearchRequest) (dto.UserPageResponse, error) {
 	if filter.Page <= 0 {
 		filter.Page = 1
 	}
@@ -188,7 +231,7 @@ func (s *userService) Search(filter dto.UserSearchRequest) (dto.UserPageResponse
 		Offset:         (filter.Page - 1) * filter.PageSize,
 	}
 
-	result, err := s.repository.Search(repositoryFilter)
+	result, err := s.repository.Search(ctx, repositoryFilter)
 	if err != nil {
 		return dto.UserPageResponse{}, err
 	}
@@ -213,18 +256,74 @@ func (s *userService) Search(filter dto.UserSearchRequest) (dto.UserPageResponse
 	}, nil
 }
 
-func (s *userService) DeleteByID(id string) error {
-	return s.repository.DeleteByID(id)
+func (s *userService) DeleteByID(ctx context.Context, id string) error {
+	if err := s.repository.DeleteByID(ctx, id); err != nil {
+		logging.FromContext(ctx).Warn("falha ao excluir usuário",
+			slog.String("operation", "user.delete"),
+			slog.String("user_id", id),
+			slog.String("error", err.Error()),
+		)
+		return err
+	}
+
+	logging.FromContext(ctx).Info("usuário excluído",
+		slog.String("operation", "user.delete"),
+		slog.String("user_id", id),
+	)
+
+	return nil
 }
 
-func (s *userService) RestoreByID(id string) error {
-	return s.repository.RestoreByID(id)
+func (s *userService) RestoreByID(ctx context.Context, id string) error {
+	if err := s.repository.RestoreByID(ctx, id); err != nil {
+		logging.FromContext(ctx).Warn("falha ao restaurar usuário",
+			slog.String("operation", "user.restore"),
+			slog.String("user_id", id),
+			slog.String("error", err.Error()),
+		)
+		return err
+	}
+
+	logging.FromContext(ctx).Info("usuário restaurado",
+		slog.String("operation", "user.restore"),
+		slog.String("user_id", id),
+	)
+
+	return nil
 }
 
-func (s *userService) ActivateByID(id string) error {
-	return s.repository.ActivateByID(id)
+func (s *userService) ActivateByID(ctx context.Context, id string) error {
+	if err := s.repository.ActivateByID(ctx, id); err != nil {
+		logging.FromContext(ctx).Warn("falha ao ativar usuário",
+			slog.String("operation", "user.activate"),
+			slog.String("user_id", id),
+			slog.String("error", err.Error()),
+		)
+		return err
+	}
+
+	logging.FromContext(ctx).Info("usuário ativado",
+		slog.String("operation", "user.activate"),
+		slog.String("user_id", id),
+	)
+
+	return nil
 }
 
-func (s *userService) DeactivateByID(id string) error {
-	return s.repository.DeactivateByID(id)
+func (s *userService) DeactivateByID(ctx context.Context, id string) error {
+	if err := s.repository.DeactivateByID(ctx, id); err != nil {
+		logging.FromContext(ctx).Warn("falha ao desativar usuário",
+			slog.String("operation", "user.deactivate"),
+			slog.String("user_id", id),
+			slog.String("error", err.Error()),
+		)
+		return err
+	}
+
+	logging.FromContext(ctx).Info("usuário desativado",
+		slog.String("operation", "user.deactivate"),
+		slog.String("user_id", id),
+	)
+
+	return nil
 }

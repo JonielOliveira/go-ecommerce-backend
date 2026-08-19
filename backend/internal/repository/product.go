@@ -1,6 +1,10 @@
 package repository
 
-import "ecommerce/internal/domain"
+import (
+	"context"
+
+	"ecommerce/internal/domain"
+)
 
 type DeletionFilter int
 
@@ -29,14 +33,14 @@ type ProductSearchResult struct {
 type ProductRepository interface {
 	// Save(product *domain.Product) (*domain.Product, error)
 	// FindAll() ([]*domain.Product, error)
-	Create(product *domain.Product) (*domain.Product, error)
-	Update(product *domain.Product) (*domain.Product, error)
+	Create(ctx context.Context, product *domain.Product) (*domain.Product, error)
+	Update(ctx context.Context, product *domain.Product) (*domain.Product, error)
 
-	FindByID(id string) (*domain.Product, error)
-	Search(filter ProductSearchFilter) (*ProductSearchResult, error)
+	FindByID(ctx context.Context, id string) (*domain.Product, error)
+	Search(ctx context.Context, filter ProductSearchFilter) (*ProductSearchResult, error)
 
-	DeleteByID(id string) error
-	RestoreByID(id string) error
-	ActivateByID(id string) error
-	DeactivateByID(id string) error
+	DeleteByID(ctx context.Context, id string) error
+	RestoreByID(ctx context.Context, id string) error
+	ActivateByID(ctx context.Context, id string) error
+	DeactivateByID(ctx context.Context, id string) error
 }

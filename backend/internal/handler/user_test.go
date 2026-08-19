@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"testing"
@@ -25,39 +26,39 @@ type fakeUserService struct {
 	deactivateByIDFunc func(id string) error
 }
 
-func (fake *fakeUserService) Register(request dto.RegisterRequest) (dto.UserResponse, error) {
+func (fake *fakeUserService) Register(_ context.Context, request dto.RegisterRequest) (dto.UserResponse, error) {
 	return fake.registerFunc(request)
 }
 
-func (fake *fakeUserService) Create(request dto.CreateUserRequest) (dto.UserResponse, error) {
+func (fake *fakeUserService) Create(_ context.Context, request dto.CreateUserRequest) (dto.UserResponse, error) {
 	return fake.createFunc(request)
 }
 
-func (fake *fakeUserService) Update(id string, request dto.UserUpdateRequest) (dto.UserResponse, error) {
+func (fake *fakeUserService) Update(_ context.Context, id string, request dto.UserUpdateRequest) (dto.UserResponse, error) {
 	return fake.updateFunc(id, request)
 }
 
-func (fake *fakeUserService) FindByID(id string) (dto.UserResponse, error) {
+func (fake *fakeUserService) FindByID(_ context.Context, id string) (dto.UserResponse, error) {
 	return fake.findByIDFunc(id)
 }
 
-func (fake *fakeUserService) Search(filter dto.UserSearchRequest) (dto.UserPageResponse, error) {
+func (fake *fakeUserService) Search(_ context.Context, filter dto.UserSearchRequest) (dto.UserPageResponse, error) {
 	return fake.searchFunc(filter)
 }
 
-func (fake *fakeUserService) DeleteByID(id string) error {
+func (fake *fakeUserService) DeleteByID(_ context.Context, id string) error {
 	return fake.deleteByIDFunc(id)
 }
 
-func (fake *fakeUserService) RestoreByID(id string) error {
+func (fake *fakeUserService) RestoreByID(_ context.Context, id string) error {
 	return fake.restoreByIDFunc(id)
 }
 
-func (fake *fakeUserService) ActivateByID(id string) error {
+func (fake *fakeUserService) ActivateByID(_ context.Context, id string) error {
 	return fake.activateByIDFunc(id)
 }
 
-func (fake *fakeUserService) DeactivateByID(id string) error {
+func (fake *fakeUserService) DeactivateByID(_ context.Context, id string) error {
 	return fake.deactivateByIDFunc(id)
 }
 

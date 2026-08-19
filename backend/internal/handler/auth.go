@@ -98,7 +98,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
-	response, err := h.userService.Register(request)
+	response, err := h.userService.Register(c.Request.Context(), request)
 	if err != nil {
 		switch {
 		case errors.Is(err, domain.ErrUserEmailAlreadyExists):
