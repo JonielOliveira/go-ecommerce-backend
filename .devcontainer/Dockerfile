@@ -19,7 +19,7 @@ RUN if [ "${INSTALL_AIR}" = "true" ]; then \
         su ${USERNAME} -c "go install github.com/air-verse/air@latest"; \
     fi \
     && if [ "${INSTALL_MIGRATE}" = "true" ]; then \
-        su ${USERNAME} -c "go install github.com/golang-migrate/migrate/v4/cmd/migrate@latest"; \
+        su ${USERNAME} -c "go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest"; \
     fi \
     && if [ "${INSTALL_SQLC}" = "true" ]; then \
         su ${USERNAME} -c "go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest"; \
