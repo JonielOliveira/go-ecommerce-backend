@@ -2,9 +2,11 @@ package service
 
 import (
 	"context"
+	"log/slog"
 
 	"ecommerce/internal/domain"
 	"ecommerce/internal/dto"
+	"ecommerce/internal/logging"
 	"ecommerce/internal/mapper"
 	"ecommerce/internal/repository"
 )
@@ -111,8 +113,20 @@ func (s *orderService) Create(
 	// nunca do corpo da requisição, nem mesmo para admin.
 	order, err := s.repository.Create(ctx, authenticatedUser.ID, items)
 	if err != nil {
+		logging.FromContext(ctx).Warn("falha ao criar pedido",
+			slog.String("operation", "order.create"),
+			slog.String("customer_id", authenticatedUser.ID),
+			slog.String("error", err.Error()),
+		)
 		return dto.OrderResponse{}, err
 	}
+
+	logging.FromContext(ctx).Info("pedido criado",
+		slog.String("operation", "order.create"),
+		slog.String("order_id", order.ID),
+		slog.String("customer_id", order.CustomerID),
+		slog.Float64("total_amount", order.TotalAmount),
+	)
 
 	return mapper.NewOrderResponse(order), nil
 }
@@ -200,8 +214,20 @@ func (s *orderService) PayByID(
 	// status PENDING na mesma instrução SQL) — sem exceção para admin.
 	order, err := s.repository.PayByID(ctx, orderID, authenticatedUser.ID)
 	if err != nil {
+		logging.FromContext(ctx).Warn("falha ao pagar pedido",
+			slog.String("operation", "order.pay"),
+			slog.String("order_id", orderID),
+			slog.String("customer_id", authenticatedUser.ID),
+			slog.String("error", err.Error()),
+		)
 		return dto.OrderResponse{}, err
 	}
+
+	logging.FromContext(ctx).Info("pedido pago",
+		slog.String("operation", "order.pay"),
+		slog.String("order_id", order.ID),
+		slog.String("customer_id", order.CustomerID),
+	)
 
 	return mapper.NewOrderResponse(order), nil
 }
@@ -215,8 +241,20 @@ func (s *orderService) CancelByID(
 
 	order, err := s.repository.CancelByID(ctx, orderID, authenticatedUser.ID, isAdmin)
 	if err != nil {
+		logging.FromContext(ctx).Warn("falha ao cancelar pedido",
+			slog.String("operation", "order.cancel"),
+			slog.String("order_id", orderID),
+			slog.String("customer_id", authenticatedUser.ID),
+			slog.String("error", err.Error()),
+		)
 		return dto.OrderResponse{}, err
 	}
+
+	logging.FromContext(ctx).Info("pedido cancelado",
+		slog.String("operation", "order.cancel"),
+		slog.String("order_id", order.ID),
+		slog.String("customer_id", order.CustomerID),
+	)
 
 	return mapper.NewOrderResponse(order), nil
 }

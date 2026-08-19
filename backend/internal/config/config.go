@@ -12,9 +12,11 @@ import (
 )
 
 type Config struct {
-	AppName    string
-	AppVersion string
-	ServerPort string
+	AppName     string
+	AppVersion  string
+	ServerPort  string
+	Environment string
+	LogLevel    string
 
 	DBHost     string
 	DBPort     string
@@ -47,9 +49,11 @@ func Load() *Config {
 	}
 
 	cfg := &Config{
-		AppName:    os.Getenv("APP_NAME"),
-		AppVersion: os.Getenv("APP_VERSION"),
-		ServerPort: os.Getenv("SERVER_PORT"),
+		AppName:     os.Getenv("APP_NAME"),
+		AppVersion:  os.Getenv("APP_VERSION"),
+		ServerPort:  os.Getenv("SERVER_PORT"),
+		Environment: os.Getenv("APP_ENV"),
+		LogLevel:    envOrDefault("APP_LOG_LEVEL", "info"),
 
 		DBHost:     os.Getenv("DB_HOST"),
 		DBPort:     os.Getenv("DB_PORT"),

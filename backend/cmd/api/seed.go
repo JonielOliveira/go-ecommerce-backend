@@ -2,7 +2,7 @@ package main
 
 import (
 	"errors"
-	"log"
+	"log/slog"
 
 	"ecommerce/internal/domain"
 	"ecommerce/internal/dto"
@@ -20,7 +20,7 @@ const (
 // existência: a própria tentativa de criação já resolve isso, já que o
 // repository mapeia e-mail duplicado (constraint única do banco) para
 // domain.ErrUserEmailAlreadyExists — nesse caso, não faz nada.
-func seedDefaultAdmin(userService service.UserService) {
+func seedDefaultAdmin(logger *slog.Logger, userService service.UserService) {
 	role := string(domain.RoleAdmin)
 
 	_, err := userService.Create(dto.CreateUserRequest{
@@ -31,7 +31,7 @@ func seedDefaultAdmin(userService service.UserService) {
 	})
 
 	if err == nil {
-		log.Printf("Usuário admin padrão criado: %s", defaultAdminEmail)
+		logger.Info("usuário admin padrão criado", slog.String("operation", "seed.default_admin"), slog.String("email", defaultAdminEmail))
 		return
 	}
 
@@ -39,5 +39,5 @@ func seedDefaultAdmin(userService service.UserService) {
 		return
 	}
 
-	log.Printf("Não foi possível criar o usuário admin padrão: %v", err)
+	logger.Error("não foi possível criar o usuário admin padrão", slog.String("operation", "seed.default_admin"), slog.String("error", err.Error()))
 }

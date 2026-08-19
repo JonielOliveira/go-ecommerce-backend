@@ -1,12 +1,14 @@
 package main
 
 import (
-	"log"
+	"log/slog"
+	"os"
 
 	"ecommerce/internal/config"
 	"ecommerce/internal/database"
 	"ecommerce/internal/domain"
 	"ecommerce/internal/handler"
+	"ecommerce/internal/logging"
 	"ecommerce/internal/middleware"
 	"ecommerce/internal/repository"
 	"ecommerce/internal/routes"
@@ -31,10 +33,13 @@ import (
 // @description JWT access token set as an HttpOnly cookie by POST /api/v1/auth/login.
 func main() {
 	cfg := config.Load()
+	logger := logging.New(cfg)
+	slog.SetDefault(logger)
 
 	db, err := database.Connect(cfg)
 	if err != nil {
-		log.Fatal(err)
+		logger.Error("falha ao conectar ao banco de dados", slog.String("error", err.Error()))
+		os.Exit(1)
 	}
 	defer db.Close()
 
@@ -46,7 +51,7 @@ func main() {
 	userService := service.NewUserService(userRepository)
 	userHandler := handler.NewUserHandler(userService)
 
-	seedDefaultAdmin(userService)
+	seedDefaultAdmin(logger, userService)
 
 	jwtService := security.NewJWTService(cfg.JWTSecret, cfg.JWTIssuer, cfg.JWTAudience, cfg.JWTAccessTokenTTL)
 
@@ -69,7 +74,9 @@ func main() {
 	requireAdminMiddleware := middleware.RequireRole(domain.RoleAdmin)
 	requireCustomerOrAdminMiddleware := middleware.RequireRole(domain.RoleCustomer, domain.RoleAdmin)
 
-	router := gin.Default()
+	router := gin.New()
+	router.Use(middleware.Recovery(logger))
+	router.Use(middleware.RequestLogger(logger))
 	router.Use(middleware.CORS(cfg.CORSAllowedOrigins))
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
@@ -86,5 +93,10 @@ func main() {
 		RequireCustomerOrAdmin: requireCustomerOrAdminMiddleware,
 	})
 
-	router.Run(":" + cfg.ServerPort)
+	logger.Info("servidor iniciado", slog.String("operation", "server.start"), slog.String("port", cfg.ServerPort))
+
+	if err := router.Run(":" + cfg.ServerPort); err != nil {
+		logger.Error("servidor encerrado com erro", slog.String("operation", "server.start"), slog.String("error", err.Error()))
+		os.Exit(1)
+	}
 }
