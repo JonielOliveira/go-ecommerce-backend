@@ -1,7 +1,7 @@
 {
   "name": "Backend Dev (Go, Gin & PostgreSQL 18)",
   "dockerComposeFile": "docker-compose.yml",
-  "service": "app",
+  "service": "app-backend",
   "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
   "shutdownAction": "stopCompose",
   "remoteUser": "vscode",
@@ -42,11 +42,15 @@
     }
   },
 
-  "forwardPorts": ["app:8080", "db:5432"],
+  "forwardPorts": ["app-backend:8080", "app-frontend:5173", "db:5432"],
 
   "portsAttributes": {
-    "app:8080": {
+    "app-backend:8080": {
       "label": "Go API (Docker)",
+      "onAutoForward": "notify"
+    },
+    "app-frontend:5173": {
+      "label": "React Frontend (Vite)",
       "onAutoForward": "notify"
     },
     "db:5432": {

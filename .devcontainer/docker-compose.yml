@@ -3,9 +3,10 @@ name: ${COMPOSE_PROJECT_NAME:-backend-dev}
 volumes:
   postgres-data:
   postgres-test-data:
+  frontend-node-modules:
 
 services:
-  app:
+  app-backend:
     container_name: ${APP_CONTAINER_NAME:-app-dev}
     build: 
       context: .
@@ -36,6 +37,21 @@ services:
 
     # Use "forwardPorts" in **devcontainer.json** to forward an app port locally. 
     # (Adding the "ports" property to this file will not forward from a Codespace.)
+
+  app-frontend:
+    container_name: ${FRONTEND_CONTAINER_NAME:-frontend-dev}
+    image: node:${NODE_TAG:-22}
+    working_dir: ${WORKSPACE_FOLDER:-/workspaces/app}/frontend
+    command: sh -c "npm ci && npm run dev -- --host 0.0.0.0"
+    ports:
+      - "${FRONTEND_EXTERNAL_PORT:-5173}:${FRONTEND_INTERNAL_PORT:-5173}"
+    volumes:
+      - ..:${WORKSPACE_FOLDER:-/workspaces/app}:cached
+      - frontend-node-modules:${WORKSPACE_FOLDER:-/workspaces/app}/frontend/node_modules
+    depends_on:
+      - app-backend
+    networks:
+      - app-network
 
   db:
     container_name: ${POSTGRES_CONTAINER_NAME:-postgres-db}
